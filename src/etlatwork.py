@@ -36,8 +36,6 @@ class etlatwork(Tkinter.Tk):
 
         self.job_list = []
 
-
-
         self.load()
 
     def load(self):
@@ -154,13 +152,16 @@ class Settings(Tkinter.Frame):
         # FME Location
         import tkFileDialog
 
-        Tkinter.Label(self, text="FME Directory:").grid(row=3, column=0, padx='5', pady='5', sticky='w')
+        Tkinter.Label(self, text="FME Exe:").grid(row=3, column=0, padx='5', pady='5', sticky='w')
         def callback_find():
             options = dict()
+            options['defaultextension'] = '.exe'
             options['initialdir'] = 'C:'
-            options['mustexist'] = True
+            #options['mustexist'] = True
+            options['initialfile'] = 'fme.exe'
+            options['filetypes'] = [('executable','.exe')]
             options['title'] = 'Locate FME Executable'
-            self.fme_location = tkFileDialog.askdirectory(**options) #Tkinter.Entry(frame_settings)
+            self.fme_location = tkFileDialog.askopenfilename(**options) #Tkinter.Entry(frame_settings)
             self.entry_fme_location.delete('0', 'end')
             self.entry_fme_location.insert('0', self.fme_location)
 
@@ -186,6 +187,12 @@ class Settings(Tkinter.Frame):
     def write_config(self):
         config = ConfigParser.ConfigParser()
         config.add_section('settings')
+        log.debug(self.entry_webserver.get()[:-1])
+        if self.entry_webserver.get()[-1] == '/':
+            fix_webserver = self.entry_webserver.get()[:-1]
+            self.entry_webserver.delete('0', 'end')
+            self.entry_webserver.insert('0', fix_webserver)
+
         config.set('settings', 'manager url', self.entry_webserver.get())
         config.set('settings', 'port', self.entry_port.get())
         config.set('settings', 'max jobs', self.entry_maxjobs.get())

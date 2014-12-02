@@ -30,9 +30,11 @@ class Job_Thread(threading.Thread):
 
         log.info('+- Starting thread %s %s'  %(self.data[0]['job']['id'], self.data[0]['repository']['name']))
         self.root.insert_job('end', dict(id=self.data[0]['job']['id'], name=self.data[0]['repository']['name'], started=datetime.datetime.now().strftime('%Y/%m/%d %H:%M'), user=self.data[0]['user']))
-        #self.new_job = job.Job(self.data, self.root, self.basedir)
-        #self.new_job.run()
-        time.sleep(5)
+        try:
+            self.new_job = job.Job(self.data, self.root)
+            self.new_job.run()
+        except Exception as e:
+            log.error(e, exc_info=True)
         log.info('+- Closing Thread %s %s' %(self.data[0]['job']['id'] , self.data[0]['repository']['name']))
         self.root.history.insert('end', (self.data[0]['job']['id'], self.data[0]['repository']['name'], self.root.get_job(self.data[0]['job']['id'])['started'], datetime.datetime.now().strftime('%Y/%m/%d %H:%M'), self.data[0]['user']))
         self.root.delete_job(self.data[0]['job']['id'])
@@ -69,7 +71,8 @@ class Stream_Server(threading.Thread): #
 
         config = ConfigParser.ConfigParser()
         config.read(os.path.join(self.basedir, 'config.ini'))
-        self.weburl = config.get('settings', 'manager url')
+        self.root.weburl = config.get('settings', 'manager url')
+        self.root.fme = config.get('settings', 'fme directory')
         self.max_jobs = config.get('settings', 'max jobs')
         self.host = ''
         self.port = int(config.get('settings', 'port'))
@@ -165,7 +168,7 @@ class Stream_Server(threading.Thread): #
         try:
             self.jobs[id].terminate()
         except KeyError:
-            log.error('Error: ' , KeyError , ' - No Job Found')
+            log.error('Error: %s - No Job Found' % KeyError)
 
 
     def status(self, status='Available'):
@@ -173,10 +176,10 @@ class Stream_Server(threading.Thread): #
         Update the status of the job
         """
         svcURL = ''
-        if self.weburl[-1] == '/':
-            svcURL = "%sinit/server/status" % self.weburl
+        if self.root.weburl[-1] == '/':
+            svcURL = "%sinit/server/status" % self.root.weburl
         else:
-            svcURL = "%s/init/server/status" % self.weburl
+            svcURL = "%s/init/server/status" % self.root.weburl
 
         fme_license = 'Professional'
 
