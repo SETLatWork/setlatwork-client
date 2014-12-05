@@ -19,7 +19,7 @@ class Job():
         try:
             self.job = data[0]['job']
             self.repository = data[0]['repository']
-            self.repository['location'] = r'C:\Users\James\Documents\etlondemand\etlmanager\applications\init\uploads'
+            #self.repository['location'] = r'C:\Users\James\Documents\etlondemand\etlmanager\applications\init\uploads'
             self.workbenches = data[0]['job']['workbenches']
         except:
             log.error('Failed to decode data', exc_info=True)
@@ -110,10 +110,16 @@ class Job():
         parameters = parameters or ' '
 
         features = []
+        log_file = ''
 
-        workbench_path = os.path.join(self.repository['location'], workbench)
+        workbench_path = os.path.join(self.repository['directory'], workbench)
         with open(workbench_path) as f:
             for line in f.readlines():
+                if string.count(line, "LOG_FILENAME \""):
+                    if '$(FME_MF_DIR)' in line:
+                        log_file = line.split(' ')[-1].replace('$(FME_MF_DIR)', self.repository['directory'])
+                    else:
+                        log_file = line.split(' ')[-1]
 
                 # Create list of Features output in Workbench
                 if string.count(line, '__wb_out_feat_type__,'): #@SupplyAttributes(__wb_out_feat_type__,
@@ -159,10 +165,9 @@ class Job():
         # Create Log Counts
         error = False
         workbench_counts = OrderedDict()
-        #for line in f.readlines():
-        logfile = os.path.join(self.repository['location'], '%s.log' %workbench.split('.')[0])
-        if os.path.exists(logfile):
-            with open(logfile) as f:
+
+        if os.path.exists(log_file):
+            with open(log_file) as f:
                 for line in f.readlines():
                     if string.count(line,'|STATS |'):
                         for feature in features:
@@ -236,7 +241,7 @@ class Job():
                     parameters += '--%s "%s"' %(parameter['name'], parameter['value'])
 
                 ## Check if workbench exists
-                workbench_path = os.path.join(self.repository['location'], workbench['name'])
+                workbench_path = os.path.join(self.repository['directory'], workbench['name'])
                 if os.path.exists(workbench_path):
                     status = self.run_workbench(workbench['name'], parameters)
                 else:
