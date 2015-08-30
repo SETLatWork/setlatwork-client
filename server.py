@@ -76,6 +76,7 @@ class Server_Thread(threading.Thread):
         import requests, json
         import sys, os
         from requests.auth import HTTPBasicAuth
+        import socket
 
 
 
@@ -95,20 +96,22 @@ class Server_Thread(threading.Thread):
         """
 
 
-        while 1:
+        while True:
             log.info('\n+- WAITING FOR CONNECTION...\n')
 
             params = {
-                'computer':os.environ['COMPUTERNAME']
+                #'computer':os.environ['COMPUTERNAME']
+                'computer':socket.gethostname()
             }
 
             r = requests.get("http://www.setlondemand.com/manager/api/job.json", params=params, auth=HTTPBasicAuth(self.user['email'], self.user['password']))
-
+            print 'peow'
             if r.status_code == 200:
                 new_job = r.json()['new_job']
                 log.info(new_job)
 
                 self.create_new_job(new_job)
+
 
             time.sleep(10)
         else:

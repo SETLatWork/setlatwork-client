@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-#
 
 import main
-import os, sys, datetime
+import os
+import sys
+import datetime
 import logging
 
 format = '%(asctime)s::%(name)s - %(levelname)s - %(filename)s - %(lineno)d - %(message)s'
@@ -19,7 +21,7 @@ else:  # should never happen
 if not os.path.exists(os.path.join(basedir, 'logs')):
     os.mkdir(os.path.join(basedir, 'logs'))
 
-logging.basicConfig(format=format, level=logging.NOTSET, filename=r'{0}\logs\{1}.log'.format(basedir, datetime.datetime.now().strftime("%Y%m%d")), datefmt=datefmt)
+logging.basicConfig(format=format, level=logging.NOTSET, filename=r'{0}/logs/{1}.log'.format(basedir, datetime.datetime.now().strftime("%Y%m%d")), datefmt=datefmt)
 os.chdir(basedir)
 sys.path = [basedir] + [p for p in sys.path if not p == basedir]
 
@@ -28,7 +30,6 @@ log = logging.getLogger(__package__)
 log.info("--------------------------------------------------------------------")
 log.info("Application Launched")
 log.info("--------------------------------------------------------------------")
-
 
 #----------------------------------------------------------------------
 if __name__ == "__main__":

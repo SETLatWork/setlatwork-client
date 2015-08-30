@@ -78,6 +78,8 @@ class Login(wx.Frame):
         r = requests.get("http://www.setlondemand.com/manager/api/authenticate", auth=HTTPBasicAuth(self.email.GetValue(), self.password.GetValue()))
 
         # check login credential
+        print r.status_code
+              
         if r.status_code != 200:
             wx.MessageBox('Unable to connect using the supplied login details', 'Invalid Login', wx.OK | wx.ICON_ERROR)
             return
