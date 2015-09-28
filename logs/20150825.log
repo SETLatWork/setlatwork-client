@@ -1,9 +1,0 @@
-20150825 21:24:55::root - INFO - setlatwork.py - 30 - --------------------------------------------------------------------
-20150825 21:24:55::root - INFO - setlatwork.py - 31 - Application Launched
-20150825 21:24:55::root - INFO - setlatwork.py - 32 - --------------------------------------------------------------------
-20150825 21:25:00::requests.packages.urllib3.connectionpool - INFO - connectionpool.py - 203 - Starting new HTTP connection (1): www.setlondemand.com
-20150825 21:25:01::requests.packages.urllib3.connectionpool - DEBUG - connectionpool.py - 383 - "GET /manager/api/authenticate HTTP/1.1" 200 None
-20150825 21:25:01::server - INFO - server.py - 100 - 
-+- WAITING FOR CONNECTION...
-
-20150825 21:25:01::requests.packages.urllib3.connectionpool - INFO - connectionpool.py - 203 - Starting new HTTP connection (1): www.setlondemand.com

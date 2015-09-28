@@ -3,23 +3,24 @@ import logging
 import wx
 import ConfigParser
 import os
-import server
 import getpass
 
 log = logging.getLogger(__name__)
 
-class Login(wx.Frame):
-    """
-    # Login
-    # ----------------------------
-    # The Login window when the user starts up SETL@Work
-    """
-    def __init__(self, parent, title, basedir):
+import taskbaricon
+ 
+########################################################################
+class MainFrame(wx.Frame):
+    """"""
+ 
+    #----------------------------------------------------------------------
+    def __init__(self, basedir):
+        """Constructor"""
         self.user = dict()
 
-        wx.Frame.__init__(self, parent, title=title, size=(250, -1), style=wx.SYSTEM_MENU|wx.CAPTION|wx.CLOSE_BOX|wx.CLIP_CHILDREN)
+        wx.Frame.__init__(self, None, title='SETL@Work', size=(250, -1), style=wx.SYSTEM_MENU|wx.CAPTION|wx.CLOSE_BOX|wx.CLIP_CHILDREN)
         self.panel = wx.Panel(self)
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+        #self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         self.basedir = basedir
 
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -68,6 +69,12 @@ class Login(wx.Frame):
         sizer.Add(self.button_login, 0, wx.ALIGN_CENTER|wx.ALL, 5)
 
         self.panel.SetSizer(sizer)
+
+        #self.tbIcon = taskbaricon.CustomTaskBarIcon(self, basedir)
+ 
+        self.Bind(wx.EVT_ICONIZE, self.onMinimize)
+        self.Bind(wx.EVT_CLOSE, self.onClose)
+
         self.Show()
 
     def login(self, e):
@@ -76,9 +83,6 @@ class Login(wx.Frame):
         from requests.auth import HTTPBasicAuth
 
         r = requests.get("http://www.setlondemand.com/manager/api/authenticate", auth=HTTPBasicAuth(self.email.GetValue(), self.password.GetValue()))
-
-        # check login credential
-        print r.status_code
               
         if r.status_code != 200:
             wx.MessageBox('Unable to connect using the supplied login details', 'Invalid Login', wx.OK | wx.ICON_ERROR)
@@ -102,48 +106,34 @@ class Login(wx.Frame):
 
         user = dict(email= self.email.GetValue(), password=self.password.GetValue(), fme=self.fme_location.GetPath())
 
-        TaskBarIcon(self.basedir, user)
+        #TaskBarIcon(self.basedir, user)
+        self.tbIcon = taskbaricon.CustomTaskBarIcon(self, self.basedir, user)
+        self.Hide()
+ 
+    #----------------------------------------------------------------------
+    def onClose(self, evt):
+        """
+        Destroy the taskbar icon and the frame
+        """
+        #self.tbIcon.RemoveIcon()
+        #self.tbIcon.Destroy()
+        #self.Hide()
         self.Destroy()
+ 
+    #----------------------------------------------------------------------
+    def onMinimize(self, event):
+        """
+        When minimizing, hide the frame so it "minimizes to tray"
+        """
+        self.Hide()
 
-    def OnCloseWindow(self, e):
-        self.Destroy()
 
-class TaskBarIcon(wx.TaskBarIcon):
-    def __init__(self, basedir, user):
-        super(TaskBarIcon, self).__init__()
-        self.set_icon(os.path.join(basedir, 'icon.ico')) #icon.gif
-        self.Bind(wx.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
-
-        self.server = server.Server_Thread(basedir, user)
-        self.server.daemon = True
-        self.server.start()
-
-    def CreatePopupMenu(self):
-        menu = wx.Menu()
-        self.create_menu_item(menu, 'SETL@Work', None) #self.open_settings
-        menu.AppendSeparator()
-        self.create_menu_item(menu, 'Exit', self.on_exit)
-        return menu
-
-    def set_icon(self, path):
-        icon = wx.IconFromBitmap(wx.Bitmap(path))
-        self.SetIcon(icon, 'SETL@Work')
-
-    def on_left_down(self, event):
-        pass
-
-    def on_exit(self, event):
-        wx.CallAfter(self.Destroy)
-
-    def create_menu_item(self, menu, label, func):
-        item = wx.MenuItem(menu, -1, label)
-        menu.Bind(wx.EVT_MENU, func, id=item.GetId())
-        menu.AppendItem(item)
-        return item
 
 
 if __name__ == "__main__":
     app = wx.App(False)
-    Login(None, 'SETL@Work')
+    MainFrame(None)
     app.MainLoop()
     sys.exit(0)
+
+# ------- END OF FILE

@@ -42,6 +42,8 @@ if __name__ == "__main__":
         log.error('Freeze Support Error')
 
     app = wx.App()
-    main.Login(None, 'SETL@Work', basedir)
+    #main.Login(None, 'SETL@Work', basedir)
+    main.MainFrame(basedir)
+    #main.TaskBarIcon(basedir, None)
     app.MainLoop()
     sys.exit()

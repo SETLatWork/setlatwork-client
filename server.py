@@ -49,11 +49,14 @@ class Server_Thread(threading.Thread):
     """
 
     def __del__(self):
-        self.stop()
+        #self.stop()
+        self._stop.set()
 
     def __init__ (self, basedir, user):
         threading.Thread.__init__(self)
-
+        self._stop = threading.Event()
+        self.running = True
+        
         import os
         import ConfigParser, getpass
 
@@ -68,17 +71,20 @@ class Server_Thread(threading.Thread):
         #self.password = config.get(getpass.getuser(), 'password').decode('base64')
         #self.fme_location = config.get(getpass.getuser(), 'fme location')
 
+    def stop(self):
+        self.running = False
+        self._stop.set()
+
     def run(self):
         """
         Start checking SETL Ondemand Manager for Jobs periodically
         """
         import time
-        import requests, json
+        import json, requests
+        import urllib2, urllib, base64
         import sys, os
         from requests.auth import HTTPBasicAuth
         import socket
-
-
 
         """
         try:
@@ -95,23 +101,21 @@ class Server_Thread(threading.Thread):
             log.error(e)
         """
 
-
-        while True:
+        while self.running:
             log.info('\n+- WAITING FOR CONNECTION...\n')
 
             params = {
-                #'computer':os.environ['COMPUTERNAME']
                 'computer':socket.gethostname()
             }
-
+           
             r = requests.get("http://www.setlondemand.com/manager/api/job.json", params=params, auth=HTTPBasicAuth(self.user['email'], self.user['password']))
-            print 'peow'
+            log.debug(r)
+            
             if r.status_code == 200:
                 new_job = r.json()['new_job']
                 log.info(new_job)
 
                 self.create_new_job(new_job)
-
 
             time.sleep(10)
         else:
