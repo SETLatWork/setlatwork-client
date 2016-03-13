@@ -176,9 +176,9 @@ class Job():
         log.info('Running {0} {1}'.format(self.fme_location, execute_params))
         error = False
 
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        self.execute = subprocess.Popen("{0} {1}".format(self.fme_location, execute_params), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, startupinfo=startupinfo, shell=False)
+        #startupinfo = subprocess.STARTUPINFO()
+        #startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        self.execute = subprocess.Popen("{0} {1}".format(self.fme_location, execute_params), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False) # , startupinfo=startupinfo
         log.debug('Run PID: {}'.format(self.execute.pid))
 
         import sys
