@@ -1,5 +1,7 @@
 # ignore these folders
 logs
+temp
 
 # ignore all pyc files
 *.pyc
+.DS_Store

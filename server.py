@@ -68,7 +68,7 @@ class Server_Thread(threading.Thread):
             log.info('+- WAITING FOR CONNECTION...')
            
             r = requests.get("http://127.0.0.1:8000/api/v1/job.json", params={'computer':socket.gethostname()}, headers=self.user['token'])
-            log.debug(r)
+            log.info('GET:Job - Status Code: %s' % r.status_code)
             
             if r.status_code == 200:
                 new_job = json.loads(r.json()['new_job'])
@@ -86,7 +86,8 @@ class Server_Thread(threading.Thread):
             log.info("Client has exited!")
         else:
             try:
-                log.debug(data)
+                for k, v in data.iteritems():
+                    log.info('%s : %s' %(k, v))
 
                 job = Job_Thread(data, self.basedir, self.user)
                 self.jobs[data['id']] = job

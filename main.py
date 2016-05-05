@@ -15,7 +15,6 @@ class MainFrame(wx.Frame):
  
     #----------------------------------------------------------------------
     def __init__(self, basedir):
-        """Constructor"""
         self.user = dict()
 
         wx.Frame.__init__(self, None, title='SETL@Work', size=(250, -1), style=wx.SYSTEM_MENU|wx.CAPTION|wx.CLOSE_BOX|wx.CLIP_CHILDREN)
@@ -81,9 +80,9 @@ class MainFrame(wx.Frame):
         # validate login details
         import requests
         import json
-        from requests.auth import HTTPBasicAuth
 
         r = requests.get("http://127.0.0.1:8000/api/v1/user/jwt", params=dict(username=self.email.GetValue(), password=self.password.GetValue()) )
+        log.info('GET:User - Status Code: %s' % r.status_code)
         
         if r.status_code != 200:
             wx.MessageBox('Unable to connect using the supplied login details', 'Invalid Login', wx.OK | wx.ICON_ERROR)

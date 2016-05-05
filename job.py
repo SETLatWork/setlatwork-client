@@ -15,7 +15,6 @@ class Job():
     def __init__(self, data, basedir, user):
         self.basedir = basedir
         self.data = data
-        log.debug(type(data))
         self.user = user
 
         self._counts = OrderedDict()
@@ -60,8 +59,7 @@ class Job():
         }
 
         log.debug(params)
-        response = requests.post('http://%s/job' % self.manager_url , params=params, headers=self.token)
-
+        response = requests.put('http://%s/job' % self.manager_url , params=params, headers=self.token)
         log.info("PUT:Job - Status Code - %s: " % response.status_code)
 
         # if the update returns a bad response then kill the job
@@ -122,7 +120,7 @@ class Job():
         #startupinfo = subprocess.STARTUPINFO()
         #startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         self.execute = subprocess.Popen("{0} {1}".format(self.fme_location, execute_params), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False) # , startupinfo=startupinfo
-        log.debug('Run PID: {}'.format(self.execute.pid))
+        log.info('Run PID: {}'.format(self.execute.pid))
 
         import sys
         while True:
@@ -141,6 +139,7 @@ class Job():
 
             # upload file to setl ondemand
             r = requests.post("http://%s/log" % self.manager_url, params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.token)
+            log.info('POST:Log - Status Code: %s' % r)
             log.debug(r.text)
 
             with open(log_file) as f:
@@ -220,19 +219,17 @@ class Job():
 
                 # download the workspace
                 with open(os.path.join(self.workspace_dir, workspace['name']), 'wb') as handle:
-                    response = requests.get('http://{0}/download/db/{1}'.format(self.manager_url, workspace['file']), stream=True, headers=self.token)
+                    r = requests.get('http://{0}/download/db/{1}'.format(self.manager_url, workspace['file']), stream=True, headers=self.token)
+                    log.info('GET:File - Status Code: %s' % r)
+                    if not r.ok:
+                        status = 'Could not retrieve %s' % workspace['name']
+                        break
 
-                    if not response.ok:
-                        # Something went wrong
-                        pass
-
-                    for block in response.iter_content(1024):
+                    for block in r.iter_content(1024):
                         if not block:
                             break
 
                         handle.write(block)
-
-                log.debug(workspace)
 
                 ## Check if workspace exists
                 workspace_path = os.path.join(self.workspace_dir, workspace['name'])
