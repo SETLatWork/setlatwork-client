@@ -44,7 +44,7 @@ class MainFrame(wx.Frame):
             openFileDialog = wx.FileDialog(self, "Find FME.exe file", "", "", "EXE files (*.exe)|*.exe", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
 
         text_fme = wx.StaticText(self.panel, -1, 'FME Location:', (45, -1))
-        self.fme_location = wx.FilePickerCtrl(parent=self.panel, id=-1, path="C:\\apps\\FME\\fme.exe", size=(240,-1), message="Find FME.exe", wildcard="EXE files (*.exe)|*.exe")
+        self.fme_location = wx.FilePickerCtrl(parent=self.panel, id=-1, path="/Users/james/Documents/fme.exe", size=(240,-1), message="Find FME.exe", wildcard="EXE files (*.exe)|*.exe")
         self.Bind(wx.EVT_BUTTON, get_fme_loc, self.fme_location)
         sizer.Add(text_fme, 0, wx.LEFT|wx.RIGHT|wx.TOP, 5)
         sizer.Add(self.fme_location, 0, wx.LEFT|wx.RIGHT|wx.TOP, 5)
@@ -80,10 +80,11 @@ class MainFrame(wx.Frame):
     def login(self, e):
         # validate login details
         import requests
+        import json
         from requests.auth import HTTPBasicAuth
 
-        r = requests.get("http://www.setlondemand.com/manager/api/authenticate", auth=HTTPBasicAuth(self.email.GetValue(), self.password.GetValue()))
-              
+        r = requests.get("http://127.0.0.1:8000/api/v1/user/jwt", params=dict(username=self.email.GetValue(), password=self.password.GetValue()) )
+        
         if r.status_code != 200:
             wx.MessageBox('Unable to connect using the supplied login details', 'Invalid Login', wx.OK | wx.ICON_ERROR)
             return
@@ -104,9 +105,8 @@ class MainFrame(wx.Frame):
         config.set(getpass.getuser(), 'fme location', self.fme_location.GetPath())
         config.write(open(os.path.join(self.basedir, 'setup'), 'w'))
 
-        user = dict(email= self.email.GetValue(), password=self.password.GetValue(), fme=self.fme_location.GetPath())
+        user = dict(token={"Authorization":"Bearer %s" % json.loads(r.text)['token']}, fme=self.fme_location.GetPath())
 
-        #TaskBarIcon(self.basedir, user)
         self.tbIcon = taskbaricon.CustomTaskBarIcon(self, self.basedir, user)
         self.Hide()
  

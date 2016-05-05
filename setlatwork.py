@@ -28,7 +28,7 @@ sys.path = [basedir] + [p for p in sys.path if not p == basedir]
 log = logging.getLogger(__package__)
 
 log.info("--------------------------------------------------------------------")
-log.info("Application Launched")
+log.info(" Application Launched")
 log.info("--------------------------------------------------------------------")
 
 #----------------------------------------------------------------------

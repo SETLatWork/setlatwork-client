@@ -1,14 +1,16 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-#
 import threading
 import logging
 import job
+import json
+import time
+import requests
+import socket
 
 log = logging.getLogger(__name__)
 
 class Job_Thread(threading.Thread):
-    """
-    Creates a thread for the job. Allowing multiple jobs to be run on a machine
-    """
+
     def __init__(self, data, basedir, user):
         threading.Thread.__init__(self)
         self.data = data
@@ -17,11 +19,6 @@ class Job_Thread(threading.Thread):
         self.user = user
 
     def run(self):
-        """
-        Start Thread
-        """
-        import time
-
         log.info("#--------------------------------------------------------------------")
         log.info('+- Starting Job {}'.format(self.data['name']))
         log.info("#--------------------------------------------------------------------")
@@ -35,21 +32,14 @@ class Job_Thread(threading.Thread):
         log.info("#--------------------------------------------------------------------")
 
     def terminate(self):
-        """
-        Sends a message to kill the job
-        """
         log.info( 'Terminating: {}'.formatself.new_job)
         self.new_job.kill()
 
 
 
 class Server_Thread(threading.Thread):
-    """
-    Receive data from the etl manager and execute
-    """
 
     def __del__(self):
-        #self.stop()
         self._stop.set()
 
     def __init__ (self, basedir, user):
@@ -67,64 +57,31 @@ class Server_Thread(threading.Thread):
         config = ConfigParser.ConfigParser()
         config.read(os.path.join(self.basedir, 'setup'))
         self.user = user
-        #self.email = config.get(getpass.getuser(), 'email')
-        #self.password = config.get(getpass.getuser(), 'password').decode('base64')
-        #self.fme_location = config.get(getpass.getuser(), 'fme location')
 
     def stop(self):
         self.running = False
         self._stop.set()
 
     def run(self):
-        """
-        Start checking SETL Ondemand Manager for Jobs periodically
-        """
-        import time
-        import json, requests
-        import urllib2, urllib, base64
-        import sys, os
-        from requests.auth import HTTPBasicAuth
-        import socket
-
-        """
-        try:
-            fme_path, filename = os.path.split(self.fme_location)
-            sys.path.append(os.path.join(fme_path, 'fmeobjects\python27'))
-            import fmeobjects
-
-            licMan = fmeobjects.FMELicenseManager()
-            log.info('FME License Type :', licMan.getLicenseType())
-            fme_license = licMan.getLicenseType()
-        except fmeobjects.FMEException as e:
-            log.error(e.message)
-        except Exception as e:
-            log.error(e)
-        """
-
+        check_delay = 10
         while self.running:
-            log.info('\n+- WAITING FOR CONNECTION...\n')
-
-            params = {
-                'computer':socket.gethostname()
-            }
+            log.info('+- WAITING FOR CONNECTION...')
            
-            r = requests.get("http://www.setlondemand.com/manager/api/job.json", params=params, auth=HTTPBasicAuth(self.user['email'], self.user['password']))
+            r = requests.get("http://127.0.0.1:8000/api/v1/job.json", params={'computer':socket.gethostname()}, headers=self.user['token'])
             log.debug(r)
             
             if r.status_code == 200:
-                new_job = r.json()['new_job']
-                log.info(new_job)
-
+                new_job = json.loads(r.json()['new_job'])
                 self.create_new_job(new_job)
+                check_delay = 1
+            elif r.status_code == 204:
+                check_delay = 10
 
-            time.sleep(10)
+            time.sleep(check_delay)
         else:
             log.info('connection ended')
 
     def create_new_job(self, data):
-        """
-        Create a thread for the new job received
-        """
         if not data:
             log.info("Client has exited!")
         else:
