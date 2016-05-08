@@ -6,6 +6,7 @@ import json
 import time
 import requests
 import socket
+import wx
 
 log = logging.getLogger(__name__)
 
@@ -66,14 +67,19 @@ class Server_Thread(threading.Thread):
         check_delay = 10
         while self.running:
             log.info('+- WAITING FOR CONNECTION...')
-           
-            r = requests.get("http://127.0.0.1:8000/api/v1/job.json", params={'computer':socket.gethostname()}, headers=self.user['token'])
-            log.info('GET:Job - Status Code: %s' % r.status_code)
-            
+            try:
+                r = requests.get("http://127.0.0.1:8000/manager/api/job.json", params={'computer':socket.gethostname()}, headers=self.user['token'])
+                log.info('GET:Job - Status Code: %s' % r.status_code)
+            except requests.ConnectionError as e:
+                log.error(e)
+                wx.MessageBox('Unable to connect to the server at this time', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
+                exit(1)
+
             if r.status_code == 200:
-                new_job = json.loads(r.json()['new_job'])
+                new_job = r.json()['new_job']
+                log.debug(type(new_job))
                 self.create_new_job(new_job)
-                check_delay = 1
+                check_delay = 5
             elif r.status_code == 204:
                 check_delay = 10
 

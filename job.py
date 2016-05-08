@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-#
 import os
+import sys
 import string
 import shutil
 import json
@@ -32,7 +33,7 @@ class Job():
         config = ConfigParser.ConfigParser()
         config.read(os.path.join(self.basedir, 'setup'))
 
-        self.manager_url = "127.0.0.1:8000/api/v1"
+        self.manager_url = "127.0.0.1:8000/manager"
         self.token = self.user['token']
         self.fme_location = self.user['fme']
 
@@ -59,7 +60,7 @@ class Job():
         }
 
         log.debug(params)
-        response = requests.put('http://%s/job' % self.manager_url , params=params, headers=self.token)
+        response = requests.put('http://%s/api/job' % self.manager_url , params=params, headers=self.token)
         log.info("PUT:Job - Status Code - %s: " % response.status_code)
 
         # if the update returns a bad response then kill the job
@@ -67,32 +68,58 @@ class Job():
 
     def run_workspace(self, workspace_path, workspace, parameters=None):
         import subprocess
+        import time
 
-        parameters = ' '
+        parameters = []
         log.debug(type(workspace['parameters']))
         log.debug(workspace['parameters'])
         for k, v in workspace['parameters'].iteritems():
             log.debug(k)
             log.debug(v)
-            parameters += '--{0} "{1}"'.format(k,v)
+            parameters.append('--{0} "{1}"'.format(k,v))
+
+        # Run workspace
+        run_arg = [self.fme_location, workspace_path] + parameters
+        log.info('Running {}'.format(run_arg))
+
+        #startupinfo = subprocess.STARTUPINFO()
+        #startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        self.execute = subprocess.Popen(run_arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False) # , startupinfo=startupinfo
+        log.info('Run PID: {}'.format(self.execute.pid))
+
+        while True:
+            line = self.execute.stdout.readline()
+            if not line:
+                break
+            log.debug(line)
+            sys.stdout.flush()
+            if 'FME floating license system failure: cannot connect to license server(-15)' in line:
+                return 'Could not obtain a license'
+
 
         features = []
         log_file = ''
 
         with open(workspace_path) as f:
             for line in f.readlines():
+                # locate the log file output location
+                # LOG_FILENAME "$(FME_MF_DIR)esrishape2ogckml.log"
                 if string.count(line, "LOG_FILENAME \""):
                     if '$(FME_MF_DIR)' in line:
-                        log_file = line.split(' ')[-1].replace('$(FME_MF_DIR)', self.workspace_dir)
+                        log_file = line.split(' ')[-1].replace('$(FME_MF_DIR)', self.workspace_dir).replace('"', '').strip()
                     else:
-                        log_file = line.split(' ')[-1]
+                        log_file = line.split(' ')[-1].replace('"', '').strip()
+                    log.debug(log_file)
 
                 # Create list of Features output in workspace
                 if string.count(line, '__wb_out_feat_type__,'): #@SupplyAttributes(__wb_out_feat_type__,
-
                     # Add to list of Features
                     if string.split(line)[-1].split(',')[-1][0:-1] not in features:
                         features.append(string.split(line)[-1].split(',')[-1][0:-1])
+                elif string.count(line, '__wb_out_feat_type__<comma>'):
+                    feature = filter(lambda d: '<comma>' in d ,string.split(line))[-1].split('<comma>')[-1].split('<')[0]
+                    if feature not in features:
+                        features.append(feature)
 
                 # Check output dir exists
                 if string.count(line, 'DEFAULT_MACRO DestDataset_'):
@@ -111,64 +138,49 @@ class Job():
 
         log.debug('Features: {}'.format(features))
 
-        execute_params = workspace_path + parameters
-
-        # Run workspace
-        log.info('Running {0} {1}'.format(self.fme_location, execute_params))
-        error = False
-
-        #startupinfo = subprocess.STARTUPINFO()
-        #startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        self.execute = subprocess.Popen("{0} {1}".format(self.fme_location, execute_params), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False) # , startupinfo=startupinfo
-        log.info('Run PID: {}'.format(self.execute.pid))
-
-        import sys
-        while True:
-            line = self.execute.stdout.readline()
-            if not line:
-                break
-            log.debug(line)
-            sys.stdout.flush()
-            if 'FME floating license system failure: cannot connect to license server(-15)' in line:
-                return 'Could not obtain a license'
 
         # Create Log Counts
         workspace_counts = OrderedDict()
+        error = False
+        log.debug('Log File Exists: %s' % os.path.exists(log_file))
 
-        if os.path.exists(log_file):
+        #if os.path.exists(log_file):
 
-            # upload file to setl ondemand
-            r = requests.post("http://%s/log" % self.manager_url, params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.token)
-            log.info('POST:Log - Status Code: %s' % r)
-            log.debug(r.text)
+        # upload file to setl ondemand
+        r = requests.post("http://%s/api/log" % self.manager_url, params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.token)
+        log.info('POST:Log - Status Code: %s' % r)
+        log.debug(r.text)
 
-            with open(log_file) as f:
-                for line in f.readlines():
-                    if string.count(line,'|STATS |'):
-                        for feature in features:
+        with open(log_file) as f:
+            for line in f.readlines():
+                if string.count(line,'|STATS |'):
+                    for feature in features:
 
-                            if string.count(line,'|STATS |{} '.format(feature)):
-                                table_name = line.split('|')[4].split()[0]
-                                table_count = line.split('|')[4].split()[-1]
+                        if string.count(line,'|STATS |{} '.format(feature)):
+                            table_name = line.split('|')[4].split()[0]
+                            table_count = line.split('|')[4].split()[-1]
 
-                                log.debug(line)
-                                if table_name in workspace_counts:
-                                    try:
-                                        if int(workspace_counts[table_name]) > int(table_count):
-                                            workspace_counts[table_name] = table_count
-                                    except:
-                                        pass
-                                else:
-                                    try:
-                                        table_count = int(table_count)
+                            log.debug(line)
+                            if table_name in workspace_counts:
+                                try:
+                                    if int(workspace_counts[table_name]) > int(table_count):
                                         workspace_counts[table_name] = table_count
-                                    except:
-                                        pass
+                                except:
+                                    pass
+                            else:
+                                try:
+                                    table_count = int(table_count)
+                                    workspace_counts[table_name] = table_count
+                                except:
+                                    pass
 
-                    elif string.count(line, '|ERROR |'):
-                        log.critical(line)
-                        log.debug(line.split('|')[-1].strip())
-                        error = True
+                elif string.count(line, '|ERROR |'):
+                    log.critical(line)
+                    log.debug(line.split('|')[-1].strip())
+                    error = True
+        #else:
+        #    log.error('Could not locate workspace log file')
+        #    return 'Error - could not locate workspace log file.'
 
         self._counts.update(workspace_counts)
 
@@ -200,6 +212,12 @@ class Job():
         status = ''
         workspace_name = ''
 
+        log.debug(type(self.data['workspaces']))
+        if isinstance(self.data['workspaces'], dict):
+            pass
+        elif isinstance(self.data['workspaces'], basestring):
+            self.data['workspaces'] = json.loads(self.data['workspaces'])
+
         try:
             for workspace in self.data['workspaces']:
                 log.debug(workspace)
@@ -219,7 +237,7 @@ class Job():
 
                 # download the workspace
                 with open(os.path.join(self.workspace_dir, workspace['name']), 'wb') as handle:
-                    r = requests.get('http://{0}/download/db/{1}'.format(self.manager_url, workspace['file']), stream=True, headers=self.token)
+                    r = requests.get('http://{0}/default/download/db/{1}'.format(self.manager_url, workspace['file']), stream=True, headers=self.token)
                     log.info('GET:File - Status Code: %s' % r)
                     if not r.ok:
                         status = 'Could not retrieve %s' % workspace['name']
@@ -244,7 +262,7 @@ class Job():
             status = e
 
         ## Store which workspaces failed
-        shutil.rmtree(self.workspace_dir)
+        #shutil.rmtree(self.workspace_dir)
 
         if status:
             log.error('{0} {1}'.format(workspace_name, status))

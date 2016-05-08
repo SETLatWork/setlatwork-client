@@ -1,6 +1,8 @@
 # ignore these folders
 logs
 temp
+build
+dist
 
 # ignore all pyc files
 *.pyc

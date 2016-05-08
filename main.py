@@ -43,7 +43,7 @@ class MainFrame(wx.Frame):
             openFileDialog = wx.FileDialog(self, "Find FME.exe file", "", "", "EXE files (*.exe)|*.exe", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
 
         text_fme = wx.StaticText(self.panel, -1, 'FME Location:', (45, -1))
-        self.fme_location = wx.FilePickerCtrl(parent=self.panel, id=-1, path="/Users/james/Documents/fme.exe", size=(240,-1), message="Find FME.exe", wildcard="EXE files (*.exe)|*.exe")
+        self.fme_location = wx.FilePickerCtrl(parent=self.panel, id=-1, path="/Library/FME/2016.1/fme", size=(240,-1), message="Find FME Executable") # , wildcard="EXE files (*.exe)|*.exe"
         self.Bind(wx.EVT_BUTTON, get_fme_loc, self.fme_location)
         sizer.Add(text_fme, 0, wx.LEFT|wx.RIGHT|wx.TOP, 5)
         sizer.Add(self.fme_location, 0, wx.LEFT|wx.RIGHT|wx.TOP, 5)
@@ -81,9 +81,14 @@ class MainFrame(wx.Frame):
         import requests
         import json
 
-        r = requests.get("http://127.0.0.1:8000/api/v1/user/jwt", params=dict(username=self.email.GetValue(), password=self.password.GetValue()) )
-        log.info('GET:User - Status Code: %s' % r.status_code)
-        
+        try:
+            r = requests.get("http://127.0.0.1:8000/manager/default/user/jwt", params=dict(username=self.email.GetValue(), password=self.password.GetValue()) )
+            log.info('GET:User - Status Code: %s' % r.status_code)
+        except requests.ConnectionError as e:
+            log.error(e)
+            wx.MessageBox('Unable to connect to the server at this time', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
+            exit(1)
+
         if r.status_code != 200:
             wx.MessageBox('Unable to connect using the supplied login details', 'Invalid Login', wx.OK | wx.ICON_ERROR)
             return
