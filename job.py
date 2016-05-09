@@ -49,12 +49,13 @@ class Job():
         self.error = 'Terminated'
 
 
-    def status(self, status='Running', error=None, counts=None):
+    def status(self, status='Running', workspace=None, counts=None, error=None):
         import socket
 
         params = {
             'job':self.data['id'],
             'status':status,
+            'workspace':workspace,
             'counts':json.dumps(counts) if counts else None,
             'error':error
         }
@@ -63,6 +64,7 @@ class Job():
 
         response = requests.put('http://%s/api/job' % self.manager_url , params=params, headers=self.token)
         log.info("PUT:Job - Status Code - %s: " % response.status_code)
+        log.info(response.text)
 
         # if the update returns a bad response then kill the job
 
@@ -187,7 +189,7 @@ class Job():
 
         ##################################
         ## Return Result
-        self.status(counts=workspace_counts)
+        self.status(counts=workspace_counts, workspace=workspace['id'])
 
         if self.terminate == True:
             return "Job was Terminated"
