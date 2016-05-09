@@ -55,11 +55,12 @@ class Job():
         params = {
             'job':self.data['id'],
             'status':status,
-            'counts':counts,
+            'counts':json.dumps(counts) if counts else None,
             'error':error
         }
 
         log.debug(params)
+
         response = requests.put('http://%s/api/job' % self.manager_url , params=params, headers=self.token)
         log.info("PUT:Job - Status Code - %s: " % response.status_code)
 
@@ -94,7 +95,7 @@ class Job():
             log.debug(line)
             sys.stdout.flush()
             if 'FME floating license system failure: cannot connect to license server(-15)' in line:
-                return 'Could not obtain a license'
+                return "Could not obtain an FME license"
 
 
         features = []
@@ -144,44 +145,44 @@ class Job():
         error = False
         log.debug('Log File Exists: %s' % os.path.exists(log_file))
 
-        #if os.path.exists(log_file):
+        if os.path.exists(log_file):
 
-        # upload file to setl ondemand
-        r = requests.post("http://%s/api/log" % self.manager_url, params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.token)
-        log.info('POST:Log - Status Code: %s' % r)
-        log.debug(r.text)
+            # upload file to setl ondemand
+            r = requests.post("http://%s/api/log" % self.manager_url, params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.token)
+            log.info('POST:Log - Status Code: %s' % r)
 
-        with open(log_file) as f:
-            for line in f.readlines():
-                if string.count(line,'|STATS |'):
-                    for feature in features:
+            with open(log_file) as f:
+                for line in f.readlines():
+                    if string.count(line,'|STATS |'):
+                        for feature in features:
 
-                        if string.count(line,'|STATS |{} '.format(feature)):
-                            table_name = line.split('|')[4].split()[0]
-                            table_count = line.split('|')[4].split()[-1]
+                            if string.count(line,'|STATS |{} '.format(feature)):
+                                table_name = line.split('|')[4].split()[0]
+                                table_count = line.split('|')[4].split()[-1]
 
-                            log.debug(line)
-                            if table_name in workspace_counts:
-                                try:
-                                    if int(workspace_counts[table_name]) > int(table_count):
+                                log.debug(line)
+                                if table_name in workspace_counts:
+                                    try:
+                                        if int(workspace_counts[table_name]) > int(table_count):
+                                            workspace_counts[table_name] = table_count
+                                    except:
+                                        pass
+                                else:
+                                    try:
+                                        table_count = int(table_count)
                                         workspace_counts[table_name] = table_count
-                                except:
-                                    pass
-                            else:
-                                try:
-                                    table_count = int(table_count)
-                                    workspace_counts[table_name] = table_count
-                                except:
-                                    pass
+                                    except:
+                                        pass
 
-                elif string.count(line, '|ERROR |'):
-                    log.critical(line)
-                    log.debug(line.split('|')[-1].strip())
-                    error = True
-        #else:
-        #    log.error('Could not locate workspace log file')
-        #    return 'Error - could not locate workspace log file.'
+                    elif string.count(line, '|ERROR |'):
+                        log.critical(line)
+                        return line.split('|')[-1].strip()
+                        error = True
+        else:
+            log.error('Could not locate workspace log file')
+            return "Could not locate workspace log file."
 
+        log.debug(workspace_counts)
         self._counts.update(workspace_counts)
 
         ##################################
@@ -189,10 +190,10 @@ class Job():
         self.status(counts=workspace_counts)
 
         if self.terminate == True:
-            return
+            return "Job was Terminated"
         elif error or len(workspace_counts) == 0:
             log.error('No features written')
-            return 'Error - no features were written.'
+            return "No features were written."
         else:
             log.info('|=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
             log.info('|                           Features Written Summary')
@@ -218,60 +219,57 @@ class Job():
         elif isinstance(self.data['workspaces'], basestring):
             self.data['workspaces'] = json.loads(self.data['workspaces'])
 
-        try:
-            for workspace in self.data['workspaces']:
-                log.debug(workspace)
-  
-                if isinstance(workspace, dict):
-                    pass
-                elif isinstance(workspace, basestring):
-                    workspace = json.loads(workspace)
-                else:
-                    log.error('Not recognised format')
-                    raise ValueError
-                
-                # Check if the Kill command issued
-                workspace_name = workspace['name']
-                if self.terminate:
-                    return 'Terminated'
+        for workspace in self.data['workspaces']:
+            log.debug(workspace)
 
-                # download the workspace
-                with open(os.path.join(self.workspace_dir, workspace['name']), 'wb') as handle:
-                    r = requests.get('http://{0}/default/download/db/{1}'.format(self.manager_url, workspace['file']), stream=True, headers=self.token)
-                    log.info('GET:File - Status Code: %s' % r)
-                    if not r.ok:
-                        status = 'Could not retrieve %s' % workspace['name']
+            if isinstance(workspace, dict):
+                pass
+            elif isinstance(workspace, basestring):
+                workspace = json.loads(workspace)
+            else:
+                log.error('Could not recognise data passed')
+                status = "Could not recognise data passed"
+                break
+            
+            workspace_name = workspace['name']
+
+            # Check if the Kill command issued
+            if self.terminate:
+                status = 'Job has been Terminated'
+                break
+
+            # download the workspace
+            with open(os.path.join(self.workspace_dir, workspace['name']), 'wb') as handle:
+                r = requests.get('http://{0}/default/download/db/{1}'.format(self.manager_url, workspace['file']), stream=True, headers=self.token)
+                log.info('GET:File - Status Code: %s' % r)
+                if not r.ok:
+                    status='Could not retrieve %s' % workspace['name']
+                    break
+
+                for block in r.iter_content(1024):
+                    if not block:
                         break
 
-                    for block in r.iter_content(1024):
-                        if not block:
-                            break
+                    handle.write(block)
 
-                        handle.write(block)
+            ## Run the WORKSPACE
+            if os.path.exists(os.path.join(self.workspace_dir, workspace['name'])):
+                status = self.run_workspace(os.path.join(self.workspace_dir, workspace['name']), workspace)
+            else:
+                log.error('Unable to locate {}'.format(workspace['name']))
+                status = 'Unable to locate {}'.format(workspace['name'])
+                break
 
-                ## Check if workspace exists
-                workspace_path = os.path.join(self.workspace_dir, workspace['name'])
-                if os.path.exists(workspace_path):
-                    status = self.run_workspace(workspace_path, workspace)
-                else:
-                    log.error('Unable to locate {}'.format(workspace['name']))
-                    status = 'Unable to locate {}'.format(workspace['name'])
-
-        except Exception as e:
-            log.error(e, exc_info=True)
-            status = e
-
-        ## Store which workspaces failed
-        #shutil.rmtree(self.workspace_dir)
+        ## Delete workspace and log on completion
+        shutil.rmtree(self.workspace_dir)
 
         if status:
+            log.debug('failed')
             log.error('{0} {1}'.format(workspace_name, status))
             self.status(status='Failed', error='Failed - {}'.format(status))
             return
-        elif self.terminate:
-            self.status(status='Failed', error='Terminated')
-            return
         else:
+            log.debug('completed')
             self.status(status='Completed')
             return
 
