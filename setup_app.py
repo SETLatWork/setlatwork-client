@@ -7,7 +7,7 @@ from setuptools import setup
 
 setup(app=['setlatwork.py'],
       #version=web2py_version,
-      description="SETL@Work",
+      description="S ETL@Work",
       author="J P Burke",
       license="GPL v3",
       data_files=[
@@ -19,7 +19,7 @@ setup(app=['setlatwork.py'],
                 #'bundle_files': 1,
                 'compressed':True,
                 'includes': 'decimal',
-                'iconfile': 'icon.ico',
+                'iconfile': 'icon',
                 #'excludes':['fmeobjects'],
                 'optimize': 0
                }},
