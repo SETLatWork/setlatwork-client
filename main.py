@@ -17,7 +17,7 @@ class MainFrame(wx.Frame):
     def __init__(self, basedir):
         self.user = dict()
 
-        wx.Frame.__init__(self, None, title='SETL@Work', size=(250, -1), style=wx.SYSTEM_MENU|wx.CAPTION|wx.CLOSE_BOX|wx.CLIP_CHILDREN)
+        wx.Frame.__init__(self, None, title='SETL@Work', size=(250, 250), style=wx.SYSTEM_MENU|wx.CAPTION|wx.CLOSE_BOX|wx.CLIP_CHILDREN)
         self.panel = wx.Panel(self)
         #self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         self.basedir = basedir

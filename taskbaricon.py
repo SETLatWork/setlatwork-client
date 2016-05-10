@@ -10,6 +10,7 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
     """"""
     TBMENU_RESTORE = wx.NewId()
     TBMENU_CLOSE   = wx.NewId()
+    TBMENU_MANAGER = wx.NewId()
 
     def __init__(self, frame, basedir, user):
         """Constructor"""
@@ -23,6 +24,7 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
         # bind some events
         self.Bind(wx.EVT_TASKBAR_LEFT_DCLICK, self.OnTaskBarActivate)
         self.Bind(wx.EVT_MENU, self.OnTaskBarActivate, id=self.TBMENU_RESTORE)
+        self.Bind(wx.EVT_MENU, self.OnTaskBarManager, id=self.TBMENU_MANAGER)
         self.Bind(wx.EVT_MENU, self.OnTaskBarClose, id=self.TBMENU_CLOSE)
 
         self.server = server.Server_Thread(basedir, user)
@@ -32,6 +34,10 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
     def OnTaskBarActivate(self, evt):
         """"""
         pass
+
+    def OnTaskBarManager(self, evt):
+        import webbrowser
+        webbrowser.open_new_tab("http://127.0.0.1:8000/manager")
 
     def OnTaskBarClose(self, evt):
         """
@@ -67,6 +73,7 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
         """
         menu = wx.Menu()
         menu.Append(self.TBMENU_RESTORE, "SETL@Work")
+        menu.Append(self.TBMENU_MANAGER, "Manager")
         menu.Append(self.TBMENU_CLOSE, "E&xit")
         wx.EVT_MENU(self, self.TBMENU_CLOSE, self.on_exit)
         return menu
