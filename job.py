@@ -64,7 +64,7 @@ class Job():
 
         response = requests.put('http://%s/api/job' % self.manager_url , params=params, headers=self.token)
         log.info("PUT:Job - Status Code - %s: " % response.status_code)
-        log.info(response.text)
+        #log.info(response.text)
 
         # if the update returns a bad response then kill the job
 
