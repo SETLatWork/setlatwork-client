@@ -68,7 +68,7 @@ class Server_Thread(threading.Thread):
         while self.running:
             log.info('+- WAITING FOR CONNECTION...')
             try:
-                r = requests.get("http://127.0.0.1:8000/manager/api/job.json", params={'computer':socket.gethostname()}, headers=self.user['token'])
+                r = requests.get("http://52.34.97.132/manager/api/job.json", params={'computer':socket.gethostname()}, headers=self.user['token'])
                 log.info('GET:Job - Status Code: %s' % r.status_code)
             except requests.ConnectionError as e:
                 log.error(e)

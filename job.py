@@ -33,7 +33,7 @@ class Job():
         config = ConfigParser.ConfigParser()
         config.read(os.path.join(self.basedir, 'setup'))
 
-        self.manager_url = "127.0.0.1:8000/manager"
+        self.manager_url = "52.34.97.132/manager"
         self.token = self.user['token']
         self.fme_location = self.user['fme']
 
