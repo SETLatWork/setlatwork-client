@@ -7,3 +7,4 @@ dist
 # ignore all pyc files
 *.pyc
 .DS_Store
+setup

@@ -82,7 +82,7 @@ class MainFrame(wx.Frame):
         import json
 
         try:
-            r = requests.get("http://127.0.0.1:8000/manager/default/user/jwt", params=dict(username=self.email.GetValue(), password=self.password.GetValue()) )
+            r = requests.get("https://www.setlatwork.com/manager/default/user/jwt", params=dict(username=self.email.GetValue(), password=self.password.GetValue()) )
             log.info('GET:User - Status Code: %s' % r.status_code)
         except requests.ConnectionError as e:
             log.error(e)
@@ -91,6 +91,7 @@ class MainFrame(wx.Frame):
 
         if r.status_code != 200:
             wx.MessageBox('Unable to connect using the supplied login details', 'Invalid Login', wx.OK | wx.ICON_ERROR)
+            log.error(r.text)
             return
 
         # check fme location
