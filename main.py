@@ -3,6 +3,7 @@ import logging
 import wx
 import ConfigParser
 import os
+import sys
 import getpass
 
 log = logging.getLogger(__name__)
@@ -40,10 +41,13 @@ class MainFrame(wx.Frame):
 
         # FME Location
         def get_fme_loc(e):
-            openFileDialog = wx.FileDialog(self, "Find FME.exe file", "", "", "EXE files (*.exe)|*.exe", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+            if sys.platform == "darwin":
+                openFileDialog = wx.FileDialog(self, "Find FME file", "/Library/FME", "fme", "", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+            elif sys.platform == 'win32':
+                openFileDialog = wx.FileDialog(self, "Find FME file", "C:/", "fme.exe", "EXE files (*.exe)|*.exe", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
 
         text_fme = wx.StaticText(self.panel, -1, 'FME Location:', (45, -1))
-        self.fme_location = wx.FilePickerCtrl(parent=self.panel, id=-1, path="/Library/FME/2016.1/fme", size=(240,-1), message="Find FME Executable") # , wildcard="EXE files (*.exe)|*.exe"
+        self.fme_location = wx.FilePickerCtrl(parent=self.panel, id=-1, path="", size=(240,-1), message="Find FME Executable") # , wildcard="EXE files (*.exe)|*.exe"
         self.Bind(wx.EVT_BUTTON, get_fme_loc, self.fme_location)
         sizer.Add(text_fme, 0, wx.LEFT|wx.RIGHT|wx.TOP, 5)
         sizer.Add(self.fme_location, 0, wx.LEFT|wx.RIGHT|wx.TOP, 5)
@@ -66,6 +70,7 @@ class MainFrame(wx.Frame):
         self.button_login = wx.Button(self.panel, -1, "Login")
         self.Bind(wx.EVT_BUTTON, self.login, self.button_login)
         sizer.Add(self.button_login, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        self.button_login.SetDefault()
 
         self.panel.SetSizer(sizer)
 
