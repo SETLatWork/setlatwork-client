@@ -89,6 +89,8 @@ class MainFrame(wx.Frame):
         try:
             if os.path.isfile(os.path.join(os.path.abspath('.'), 'cacert.pem')):
                 cert_path = os.path.join(os.path.abspath('.'), 'cacert.pem')
+            elif os.path.isfile(requests.certs.where()):
+                cert_path = requests.certs.where()
             else:
                 cert_path = False
 
