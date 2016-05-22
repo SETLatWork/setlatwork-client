@@ -82,12 +82,18 @@ class MainFrame(wx.Frame):
         import json
 
         try:
-            r = requests.get("https://www.setlatwork.com/manager/default/user/jwt", params=dict(username=self.email.GetValue(), password=self.password.GetValue()) )
+            if os.path.isfile(os.path.join(os.path.abspath('.'), 'cacert.pem')):
+                cert_path = os.path.join(os.path.abspath('.'), 'cacert.pem')
+            else:
+                cert_path = False
+
+            r = requests.get("https://www.setlatwork.com/manager/default/user/jwt", params=dict(username=self.email.GetValue(), password=self.password.GetValue()), verify=cert_path)
             log.info('GET:User - Status Code: %s' % r.status_code)
         except requests.ConnectionError as e:
-            log.error(e)
+            log.error(e, exc_info=True)
             wx.MessageBox('Unable to connect to the server at this time', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
             exit(1)
+            return
 
         if r.status_code != 200:
             wx.MessageBox('Unable to connect using the supplied login details', 'Invalid Login', wx.OK | wx.ICON_ERROR)

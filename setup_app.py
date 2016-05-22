@@ -3,7 +3,7 @@
 
 
 from setuptools import setup
-
+import requests.certs
 
 setup(app=['setlatwork.py'],
       #version=web2py_version,
@@ -13,6 +13,7 @@ setup(app=['setlatwork.py'],
       data_files=[
       'LICENSE',
       'icon.ico',
+      requests.certs.where()
       ],
       options={'py2app': {
                 'argv_emulation': True,
