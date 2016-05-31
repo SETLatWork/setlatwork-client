@@ -33,7 +33,7 @@ class Job():
         config = ConfigParser.ConfigParser()
         config.read(os.path.join(self.basedir, 'setup'))
 
-        self.manager_url = "setlatwork-lb-1253573487.us-west-2.elb.amazonaws.com/manager"
+        self.manager_url = "127.0.0.1:8000/manager" #"setlatwork-lb-1253573487.us-west-2.elb.amazonaws.com/manager"
         self.token = self.user['token']
         self.fme_location = self.user['fme']
 

@@ -16,7 +16,7 @@ setup(app=['setlatwork.py'],
       requests.certs.where()
       ],
       options={'py2app': {
-                'argv_emulation': True,
+                'argv_emulation': False,
                 #'bundle_files': 1,
                 'compressed':True,
                 'includes': 'decimal',
