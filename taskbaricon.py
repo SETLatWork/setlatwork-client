@@ -2,6 +2,8 @@ import logging
 import wx
 import os
 import server
+import requests
+import socket
 
 log = logging.getLogger(__name__)
  
@@ -16,6 +18,8 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
         """Constructor"""
         wx.TaskBarIcon.__init__(self)
         self.frame = frame
+        self.basedir = basedir
+        self.user = user
 
         # Set Icon
         icon = wx.IconFromBitmap(wx.Bitmap(os.path.join(basedir, 'icon.ico')))
@@ -37,7 +41,7 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
 
     def OnTaskBarManager(self, evt):
         import webbrowser
-        webbrowser.open_new_tab("http://www.setlatwork.com/manager")
+        webbrowser.open_new_tab(self.user['manager'])
 
     def OnTaskBarClose(self, evt):
         """
@@ -55,6 +59,8 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
     def on_exit(self, event):
         wx.CallAfter(self.Destroy)
         self.server.stop()
+        r = requests.post("%s/api/client_log" % self.user['manager'], params=dict(worker=socket.gethostname()), files={'file': open(os.path.join(self.basedir, 'logs/client.log'))}, headers=self.user['token'])
+        log.info('POST:Client_Log - Status Code: %s' % r)
         exit(1)
 
     def OnTaskBarActivate(self, evt):

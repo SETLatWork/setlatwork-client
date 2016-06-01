@@ -6,8 +6,10 @@ import shutil
 import json
 from collections import OrderedDict
 import logging
+import socket
 import requests
 from requests.auth import HTTPBasicAuth
+import subprocess
 
 log = logging.getLogger(__package__)
 
@@ -33,7 +35,7 @@ class Job():
         config = ConfigParser.ConfigParser()
         config.read(os.path.join(self.basedir, 'setup'))
 
-        self.manager_url = "127.0.0.1:8000/manager" #"setlatwork-lb-1253573487.us-west-2.elb.amazonaws.com/manager"
+        #self.manager_url = "127.0.0.1:8000/manager" #"https://www.setlatwork.com/manager"
         self.token = self.user['token']
         self.fme_location = self.user['fme']
 
@@ -49,30 +51,23 @@ class Job():
         self.error = 'Terminated'
 
 
-    def status(self, status='Running', workspace=None, error=None): # , counts=None
-        import socket
-
+    def status(self, status='Running', workspace=None, error=None):
         params = {
             'job':self.data['id'],
             'status':status,
             'workspace':workspace,
-            #'counts':json.dumps(counts) if counts else None,
             'error':error
         }
 
         log.debug(params)
 
-        response = requests.put('http://%s/api/job' % self.manager_url , params=params, headers=self.token)
+        response = requests.put('%s/api/job' % self.user['manager'] , params=params, headers=self.token)
         log.info("PUT:Job - Status Code - %s: " % response.status_code)
-        #log.info(response.text)
-
+        
         # if the update returns a bad response then kill the job
 
 
     def run_workspace(self, workspace_path, workspace, parameters=None):
-        import subprocess
-        import time
-
         parameters = []
         log.debug(type(workspace['parameters']))
         log.debug(workspace['parameters'])
@@ -109,110 +104,26 @@ class Job():
 
         log.debug(log_file)
 
-        # with open(workspace_path) as f:
-        #     for line in f.readlines():
-        #         # locate the log file output location
-        #         # LOG_FILENAME "$(FME_MF_DIR)esrishape2ogckml.log"
-        #         if string.count(line, "LOG_FILENAME \""):
-        #             if '$(FME_MF_DIR)' in line:
-        #                 log_file = line.split(' ')[-1].replace('$(FME_MF_DIR)', self.workspace_dir).replace('"', '').strip()
-        #             else:
-        #                 log_file = line.split(' ')[-1].replace('"', '').strip()
-        #             log.debug(log_file)
-
-        #         # Create list of Features output in workspace
-        #         if string.count(line, '__wb_out_feat_type__,'): #@SupplyAttributes(__wb_out_feat_type__,
-        #             # Add to list of Features
-        #             if string.split(line)[-1].split(',')[-1][0:-1] not in features:
-        #                 features.append(string.split(line)[-1].split(',')[-1][0:-1])
-        #         elif string.count(line, '__wb_out_feat_type__<comma>'):
-        #             feature = filter(lambda d: '<comma>' in d ,string.split(line))[-1].split('<comma>')[-1].split('<')[0]
-        #             if feature not in features:
-        #                 features.append(feature)
-
-        #         # Check output dir exists
-        #         if string.count(line, 'DEFAULT_MACRO DestDataset_'):
-        #             output_dir = line.split('{')[-1].split('}')[0].split()[-1]
-        #             log.debug(output_dir)
-
-        #             if output_dir[0] == '$':
-        #                 output_param = output_dir.replace('$(','').replace(')','')
-        #                 log.debug(output_param)
-        #                 if output_param in workspace['parameters']:
-        #                     log.debug('Output Dir: {}'.format(workspace['parameters'][output_param]))
-        #                 else:
-        #                     log.error('Output parameter not given!')
-        #                     log.debug(parameters)
-
-
-        #log.debug('Features: {}'.format(features))
-
-
         # Create Log Counts
-        workspace_counts = OrderedDict()
-        error = False
         log.debug('Log File Exists: %s' % os.path.exists(log_file))
 
         if os.path.exists(log_file):
 
             # upload file to setl ondemand
-            r = requests.post("http://%s/api/log" % self.manager_url, params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.token)
+            r = requests.post("%s/api/log" % self.user['manager'], params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.token)
             log.info('POST:Log - Status Code: %s' % r)
 
-            # with open(log_file) as f:
-            #     for line in f.readlines():
-            #         if string.count(line,'|STATS |'):
-            #             for feature in features:
-
-            #                 if string.count(line,'|STATS |{} '.format(feature)):
-            #                     table_name = line.split('|')[4].split()[0]
-            #                     table_count = line.split('|')[4].split()[-1]
-
-            #                     log.debug(line)
-            #                     if table_name in workspace_counts:
-            #                         try:
-            #                             if int(workspace_counts[table_name]) > int(table_count):
-            #                                 workspace_counts[table_name] = table_count
-            #                         except:
-            #                             pass
-            #                     else:
-            #                         try:
-            #                             table_count = int(table_count)
-            #                             workspace_counts[table_name] = table_count
-            #                         except:
-            #                             pass
-
-            #         elif string.count(line, '|ERROR |'):
-            #             log.critical(line)
-            #             return line.split('|')[-1].strip()
-            #             error = True
         else:
             log.error('Could not locate workspace log file')
             return "Could not locate workspace log file."
 
-        #log.debug(workspace_counts)
-        #self._counts.update(workspace_counts)
 
         ##################################
         ## Return Result
-        self.status(workspace=workspace['id']) # counts=workspace_counts, 
+        self.status(workspace=workspace['id'])
 
         if self.terminate == True:
             return "Job was Terminated"
-        # elif error or len(workspace_counts) == 0:
-        #     log.error('No features written')
-        #     return "No features were written."
-        # else:
-        #     log.info('|=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
-        #     log.info('|                           Features Written Summary')
-        #     log.info('|=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
-        #     for feature, count in workspace_counts.items():
-        #         try:
-        #             log.info('|{0:29s}                                     {1:9d}'.format(feature, int(count)))
-        #         except:
-        #             log.info('|{0}                                             {1}'.format(feature, count))
-        #     log.info('|==============================================================================')
-        #     log.info('Completed {}'.format(workspace['name']))
         else:
             return
 
@@ -249,7 +160,7 @@ class Job():
 
             # download the workspace
             with open(os.path.join(self.workspace_dir, workspace['name']), 'wb') as handle:
-                r = requests.get('http://{0}/default/download/db/{1}'.format(self.manager_url, workspace['file']), stream=True, headers=self.token)
+                r = requests.get('{0}/default/download/db/{1}'.format(self.user['manager'], workspace['file']), stream=True, headers=self.token)
                 log.info('GET:File - Status Code: %s' % r)
                 if not r.ok:
                     status='Could not retrieve %s' % workspace['name']
@@ -281,9 +192,3 @@ class Job():
             log.debug('completed')
             self.status(status='Completed')
             return
-
-
-
-    @property
-    def counts(self):
-        return self._counts

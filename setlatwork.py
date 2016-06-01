@@ -12,14 +12,14 @@ datefmt = '%Y%m%d %H:%M:%S'
 if '__file__' in globals():
     basedir = os.path.dirname(os.path.abspath(__file__))
 elif hasattr(sys, 'frozen'):
-    basedir = os.path.dirname(os.path.abspath(sys.executable))  # for py2exe
-else:  # should never happen
+    basedir = os.path.dirname(os.path.abspath(sys.executable))
+else:
     basedir = os.getcwd()
 
 if not os.path.exists(os.path.join(basedir, 'logs')):
     os.mkdir(os.path.join(basedir, 'logs'))
 
-logging.basicConfig(format=format, level=logging.NOTSET, filename=r'{0}/logs/{1}.log'.format(basedir, datetime.datetime.now().strftime("%Y%m%d")), datefmt=datefmt)
+logging.basicConfig(format=format, level=logging.NOTSET, filemode='w', filename=r'{0}/logs/client.log'.format(basedir, datetime.datetime.now().strftime("%Y%m%d")), datefmt=datefmt)
 os.chdir(basedir)
 sys.path = [basedir] + [p for p in sys.path if not p == basedir]
 

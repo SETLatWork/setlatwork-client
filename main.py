@@ -7,7 +7,6 @@ import sys
 import getpass
 import requests
 import json
-import glob
 import socket
 
 log = logging.getLogger(__name__)
@@ -85,9 +84,6 @@ class MainFrame(wx.Frame):
         self.Show()
 
     def login(self, e):
-        # upload logs
-        for content in glob.glob(os.path.join(self.basedir, 'logs/') + "*.log"):
-            print(content)
         # validate login details
         try:
             if os.path.isfile(os.path.join(os.path.abspath('.'), 'cacert.pem')):
@@ -126,7 +122,13 @@ class MainFrame(wx.Frame):
         config.set(getpass.getuser(), 'fme location', self.fme_location.GetPath())
         config.write(open(os.path.join(self.basedir, 'setup'), 'w'))
 
-        user = dict(token={"Authorization":"Bearer %s" % json.loads(r.text)['token']}, fme=self.fme_location.GetPath())
+        user = dict(token={"Authorization":"Bearer %s" % json.loads(r.text)['token']}, fme=self.fme_location.GetPath(), manager=self.manager_url)
+
+        # # upload client logs
+        # for content in glob.glob(os.path.join(self.basedir, 'logs/') + "*.log"):
+        #     log.debug(content)
+        #     r = requests.post("http://%s/api/client_log" % self.manager_url, params=dict(worker=socket.gethostname()), files={'file': open(content)}, headers=user['token'])
+        #     log.info('POST:Log - Status Code: %s' % r)
 
         self.tbIcon = taskbaricon.CustomTaskBarIcon(self, self.basedir, user)
         self.Hide()
