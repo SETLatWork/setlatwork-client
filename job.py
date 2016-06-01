@@ -20,7 +20,6 @@ class Job():
         self.data = data
         self.user = user
 
-        self._counts = OrderedDict()
         self.terminate = False
         self.execute = None
 
@@ -28,16 +27,12 @@ class Job():
         os.makedirs(self.workspace_dir)
 
         log.debug(basedir)
-        log.debug(self.workspace_dir)
+        log.info(self.workspace_dir)
 
-        import ConfigParser, getpass
-
-        config = ConfigParser.ConfigParser()
-        config.read(os.path.join(self.basedir, 'setup'))
-
-        #self.manager_url = "127.0.0.1:8000/manager" #"https://www.setlatwork.com/manager"
         self.token = self.user['token']
         self.fme_location = self.user['fme']
+
+        log.info(self.fme_location)
 
 
     def kill(self):
@@ -80,9 +75,7 @@ class Job():
         run_arg = [self.fme_location, workspace_path] + parameters
         log.info('Running {}'.format(run_arg))
 
-        #startupinfo = subprocess.STARTUPINFO()
-        #startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        self.execute = subprocess.Popen(run_arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False) # , startupinfo=startupinfo
+        self.execute = subprocess.Popen(run_arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         log.info('Run PID: {}'.format(self.execute.pid))
 
         while True:

@@ -16,11 +16,10 @@ import taskbaricon
 class MainFrame(wx.Frame):
 
     def __init__(self, basedir):
-        self.user = dict()
-
+        
         wx.Frame.__init__(self, None, title='SETL@Work', size=(250, 250), style=wx.SYSTEM_MENU|wx.CAPTION|wx.CLOSE_BOX|wx.CLIP_CHILDREN)
         self.panel = wx.Panel(self)   
-        #self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+
         self.basedir = basedir
         self.manager_url = "http://127.0.0.1:8000/manager" # "https://www.setlatwork.com/manager"
 
@@ -75,8 +74,6 @@ class MainFrame(wx.Frame):
         self.button_login.SetDefault()
 
         self.panel.SetSizer(sizer)
-
-        #self.tbIcon = taskbaricon.CustomTaskBarIcon(self, basedir)
  
         self.Bind(wx.EVT_ICONIZE, self.onMinimize)
         self.Bind(wx.EVT_CLOSE, self.onClose)
@@ -122,13 +119,9 @@ class MainFrame(wx.Frame):
         config.set(getpass.getuser(), 'fme location', self.fme_location.GetPath())
         config.write(open(os.path.join(self.basedir, 'setup'), 'w'))
 
-        user = dict(token={"Authorization":"Bearer %s" % json.loads(r.text)['token']}, fme=self.fme_location.GetPath(), manager=self.manager_url)
-
-        # # upload client logs
-        # for content in glob.glob(os.path.join(self.basedir, 'logs/') + "*.log"):
-        #     log.debug(content)
-        #     r = requests.post("http://%s/api/client_log" % self.manager_url, params=dict(worker=socket.gethostname()), files={'file': open(content)}, headers=user['token'])
-        #     log.info('POST:Log - Status Code: %s' % r)
+        user = dict(token={"Authorization":"Bearer %s" % json.loads(r.text)['token']}, 
+                    fme=self.fme_location.GetPath(),
+                    manager=self.manager_url)
 
         self.tbIcon = taskbaricon.CustomTaskBarIcon(self, self.basedir, user)
         self.Hide()

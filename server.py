@@ -7,6 +7,7 @@ import time
 import requests
 import socket
 import wx
+import os
 
 log = logging.getLogger(__name__)
 
@@ -47,17 +48,10 @@ class Server_Thread(threading.Thread):
         threading.Thread.__init__(self)
         self._stop = threading.Event()
         self.running = True
-        #self.manager_url = "http://127.0.0.1:8000/manager" #"http://setlatwork-lb-1253573487.us-west-2.elb.amazonaws.com/manager"
         
-        import os
-        import ConfigParser, getpass
-
         self.basedir = basedir
 
         self.jobs = dict()
-
-        config = ConfigParser.ConfigParser()
-        config.read(os.path.join(self.basedir, 'setup'))
         self.user = user
 
     def stop(self):
@@ -76,9 +70,8 @@ class Server_Thread(threading.Thread):
                 exit(1)
 
             if r.status_code == 200:
-                new_job = r.json()['new_job']
-                log.debug(type(new_job))
-                self.create_new_job(new_job)
+                self.create_new_job(r.json()['new_job'])
+                self.check_jobs(r.json()['current_jobs'])
                 check_delay = 5
             elif r.status_code == 204:
                 check_delay = 10
@@ -88,6 +81,11 @@ class Server_Thread(threading.Thread):
             time.sleep(check_delay)
         else:
             log.info('connection ended')
+
+    def check_jobs(self, current_jobs):
+        for job in current_jobs:
+            if job['id'] not in self.jobs:
+                self.terminate(job['id'])
 
     def create_new_job(self, data):
         if not data:
@@ -112,5 +110,5 @@ class Server_Thread(threading.Thread):
         try:
             self.jobs[id].terminate()
         except KeyError:
-            log.error('Error: {} - No Job Found'.format(KeyError))
+            log.error('Error: Job could not be terminated - Not Found')
 
