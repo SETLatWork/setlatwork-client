@@ -47,7 +47,7 @@ class Server_Thread(threading.Thread):
         threading.Thread.__init__(self)
         self._stop = threading.Event()
         self.running = True
-        self.manager_url = "http://127.0.0.1:8000/manager" #"http://setlatwork-lb-1253573487.us-west-2.elb.amazonaws.com/manager"
+        #self.manager_url = "http://127.0.0.1:8000/manager" #"http://setlatwork-lb-1253573487.us-west-2.elb.amazonaws.com/manager"
         
         import os
         import ConfigParser, getpass
@@ -82,6 +82,8 @@ class Server_Thread(threading.Thread):
                 check_delay = 5
             elif r.status_code == 204:
                 check_delay = 10
+            elif r.status_code == 503:
+                check_delay = 30
 
             time.sleep(check_delay)
         else:
