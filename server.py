@@ -47,6 +47,7 @@ class Server_Thread(threading.Thread):
         threading.Thread.__init__(self)
         self._stop = threading.Event()
         self.running = True
+        self.manager_url = "http://127.0.0.1:8000/manager" #"http://setlatwork-lb-1253573487.us-west-2.elb.amazonaws.com/manager"
         
         import os
         import ConfigParser, getpass
@@ -66,9 +67,8 @@ class Server_Thread(threading.Thread):
     def run(self):
         check_delay = 10
         while self.running:
-            log.info('+- WAITING FOR CONNECTION...')
             try:
-                r = requests.get("http://setlatwork-lb-1253573487.us-west-2.elb.amazonaws.com/manager/api/job.json", params={'computer':socket.gethostname()}, headers=self.user['token'])
+                r = requests.get("%s/api/job.json" % self.manager_url, params={'computer':socket.gethostname()}, headers=self.user['token'])
                 log.info('GET:Job - Status Code: %s' % r.status_code)
             except requests.ConnectionError as e:
                 log.error(e)

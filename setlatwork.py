@@ -11,10 +11,8 @@ datefmt = '%Y%m%d %H:%M:%S'
 
 if '__file__' in globals():
     basedir = os.path.dirname(os.path.abspath(__file__))
-    #logging.basicConfig(format=format, level=logging.NOTSET, datefmt=datefmt)
 elif hasattr(sys, 'frozen'):
     basedir = os.path.dirname(os.path.abspath(sys.executable))  # for py2exe
-    #logging.basicConfig(format=format, level=logging.NOTSET, filename=r'logs\%s.log' % datetime.datetime.now().strftime("%Y%m%d"), datefmt=datefmt)
 else:  # should never happen
     basedir = os.getcwd()
 
@@ -41,8 +39,6 @@ if __name__ == "__main__":
         log.error('Freeze Support Error')
 
     app = wx.App()
-    #main.Login(None, 'SETL@Work', basedir)
     main.MainFrame(basedir)
-    #main.TaskBarIcon(basedir, None)
     app.MainLoop()
     sys.exit()

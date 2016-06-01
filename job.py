@@ -49,14 +49,14 @@ class Job():
         self.error = 'Terminated'
 
 
-    def status(self, status='Running', workspace=None, counts=None, error=None):
+    def status(self, status='Running', workspace=None, error=None): # , counts=None
         import socket
 
         params = {
             'job':self.data['id'],
             'status':status,
             'workspace':workspace,
-            'counts':json.dumps(counts) if counts else None,
+            #'counts':json.dumps(counts) if counts else None,
             'error':error
         }
 
@@ -99,47 +99,53 @@ class Job():
             if 'FME floating license system failure: cannot connect to license server(-15)' in line:
                 return "Could not obtain an FME license"
 
-
-        features = []
+        log.debug(workspace)
+        #features = []
         log_file = ''
+        if '$(FME_MF_DIR)' in workspace['log_file']:
+            log_file = workspace['log_file'].replace('$(FME_MF_DIR)', self.workspace_dir)
+        else:
+            log_file = workspace['log_file']
 
-        with open(workspace_path) as f:
-            for line in f.readlines():
-                # locate the log file output location
-                # LOG_FILENAME "$(FME_MF_DIR)esrishape2ogckml.log"
-                if string.count(line, "LOG_FILENAME \""):
-                    if '$(FME_MF_DIR)' in line:
-                        log_file = line.split(' ')[-1].replace('$(FME_MF_DIR)', self.workspace_dir).replace('"', '').strip()
-                    else:
-                        log_file = line.split(' ')[-1].replace('"', '').strip()
-                    log.debug(log_file)
+        log.debug(log_file)
 
-                # Create list of Features output in workspace
-                if string.count(line, '__wb_out_feat_type__,'): #@SupplyAttributes(__wb_out_feat_type__,
-                    # Add to list of Features
-                    if string.split(line)[-1].split(',')[-1][0:-1] not in features:
-                        features.append(string.split(line)[-1].split(',')[-1][0:-1])
-                elif string.count(line, '__wb_out_feat_type__<comma>'):
-                    feature = filter(lambda d: '<comma>' in d ,string.split(line))[-1].split('<comma>')[-1].split('<')[0]
-                    if feature not in features:
-                        features.append(feature)
+        # with open(workspace_path) as f:
+        #     for line in f.readlines():
+        #         # locate the log file output location
+        #         # LOG_FILENAME "$(FME_MF_DIR)esrishape2ogckml.log"
+        #         if string.count(line, "LOG_FILENAME \""):
+        #             if '$(FME_MF_DIR)' in line:
+        #                 log_file = line.split(' ')[-1].replace('$(FME_MF_DIR)', self.workspace_dir).replace('"', '').strip()
+        #             else:
+        #                 log_file = line.split(' ')[-1].replace('"', '').strip()
+        #             log.debug(log_file)
 
-                # Check output dir exists
-                if string.count(line, 'DEFAULT_MACRO DestDataset_'):
-                    output_dir = line.split('{')[-1].split('}')[0].split()[-1]
-                    log.debug(output_dir)
+        #         # Create list of Features output in workspace
+        #         if string.count(line, '__wb_out_feat_type__,'): #@SupplyAttributes(__wb_out_feat_type__,
+        #             # Add to list of Features
+        #             if string.split(line)[-1].split(',')[-1][0:-1] not in features:
+        #                 features.append(string.split(line)[-1].split(',')[-1][0:-1])
+        #         elif string.count(line, '__wb_out_feat_type__<comma>'):
+        #             feature = filter(lambda d: '<comma>' in d ,string.split(line))[-1].split('<comma>')[-1].split('<')[0]
+        #             if feature not in features:
+        #                 features.append(feature)
 
-                    if output_dir[0] == '$':
-                        output_param = output_dir.replace('$(','').replace(')','')
-                        log.debug(output_param)
-                        if output_param in workspace['parameters']:
-                            log.debug('Output Dir: {}'.format(workspace['parameters'][output_param]))
-                        else:
-                            log.error('Output parameter not given!')
-                            log.debug(parameters)
+        #         # Check output dir exists
+        #         if string.count(line, 'DEFAULT_MACRO DestDataset_'):
+        #             output_dir = line.split('{')[-1].split('}')[0].split()[-1]
+        #             log.debug(output_dir)
+
+        #             if output_dir[0] == '$':
+        #                 output_param = output_dir.replace('$(','').replace(')','')
+        #                 log.debug(output_param)
+        #                 if output_param in workspace['parameters']:
+        #                     log.debug('Output Dir: {}'.format(workspace['parameters'][output_param]))
+        #                 else:
+        #                     log.error('Output parameter not given!')
+        #                     log.debug(parameters)
 
 
-        log.debug('Features: {}'.format(features))
+        #log.debug('Features: {}'.format(features))
 
 
         # Create Log Counts
@@ -153,60 +159,61 @@ class Job():
             r = requests.post("http://%s/api/log" % self.manager_url, params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.token)
             log.info('POST:Log - Status Code: %s' % r)
 
-            with open(log_file) as f:
-                for line in f.readlines():
-                    if string.count(line,'|STATS |'):
-                        for feature in features:
+            # with open(log_file) as f:
+            #     for line in f.readlines():
+            #         if string.count(line,'|STATS |'):
+            #             for feature in features:
 
-                            if string.count(line,'|STATS |{} '.format(feature)):
-                                table_name = line.split('|')[4].split()[0]
-                                table_count = line.split('|')[4].split()[-1]
+            #                 if string.count(line,'|STATS |{} '.format(feature)):
+            #                     table_name = line.split('|')[4].split()[0]
+            #                     table_count = line.split('|')[4].split()[-1]
 
-                                log.debug(line)
-                                if table_name in workspace_counts:
-                                    try:
-                                        if int(workspace_counts[table_name]) > int(table_count):
-                                            workspace_counts[table_name] = table_count
-                                    except:
-                                        pass
-                                else:
-                                    try:
-                                        table_count = int(table_count)
-                                        workspace_counts[table_name] = table_count
-                                    except:
-                                        pass
+            #                     log.debug(line)
+            #                     if table_name in workspace_counts:
+            #                         try:
+            #                             if int(workspace_counts[table_name]) > int(table_count):
+            #                                 workspace_counts[table_name] = table_count
+            #                         except:
+            #                             pass
+            #                     else:
+            #                         try:
+            #                             table_count = int(table_count)
+            #                             workspace_counts[table_name] = table_count
+            #                         except:
+            #                             pass
 
-                    elif string.count(line, '|ERROR |'):
-                        log.critical(line)
-                        return line.split('|')[-1].strip()
-                        error = True
+            #         elif string.count(line, '|ERROR |'):
+            #             log.critical(line)
+            #             return line.split('|')[-1].strip()
+            #             error = True
         else:
             log.error('Could not locate workspace log file')
             return "Could not locate workspace log file."
 
-        log.debug(workspace_counts)
-        self._counts.update(workspace_counts)
+        #log.debug(workspace_counts)
+        #self._counts.update(workspace_counts)
 
         ##################################
         ## Return Result
-        self.status(counts=workspace_counts, workspace=workspace['id'])
+        self.status(workspace=workspace['id']) # counts=workspace_counts, 
 
         if self.terminate == True:
             return "Job was Terminated"
-        elif error or len(workspace_counts) == 0:
-            log.error('No features written')
-            return "No features were written."
+        # elif error or len(workspace_counts) == 0:
+        #     log.error('No features written')
+        #     return "No features were written."
+        # else:
+        #     log.info('|=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
+        #     log.info('|                           Features Written Summary')
+        #     log.info('|=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
+        #     for feature, count in workspace_counts.items():
+        #         try:
+        #             log.info('|{0:29s}                                     {1:9d}'.format(feature, int(count)))
+        #         except:
+        #             log.info('|{0}                                             {1}'.format(feature, count))
+        #     log.info('|==============================================================================')
+        #     log.info('Completed {}'.format(workspace['name']))
         else:
-            log.info('|=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
-            log.info('|                           Features Written Summary')
-            log.info('|=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
-            for feature, count in workspace_counts.items():
-                try:
-                    log.info('|{0:29s}                                     {1:9d}'.format(feature, int(count)))
-                except:
-                    log.info('|{0}                                             {1}'.format(feature, count))
-            log.info('|==============================================================================')
-            log.info('Completed {}'.format(workspace['name']))
             return
 
 

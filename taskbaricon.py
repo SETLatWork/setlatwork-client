@@ -65,12 +65,6 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
         self.frame.Raise()
 
     def CreatePopupMenu(self):
-        """
-        This method is called by the base class when it needs to popup
-        the menu for the default EVT_RIGHT_DOWN event.  Just create
-        the menu how you want it and return it from this function,
-        the base class takes care of the rest.
-        """
         menu = wx.Menu()
         menu.Append(self.TBMENU_RESTORE, "SETL@Work")
         menu.Append(self.TBMENU_MANAGER, "Manager")

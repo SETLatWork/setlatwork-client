@@ -5,23 +5,25 @@ import ConfigParser
 import os
 import sys
 import getpass
+import requests
+import json
+import glob
+import socket
 
 log = logging.getLogger(__name__)
 
 import taskbaricon
  
-########################################################################
 class MainFrame(wx.Frame):
-    """"""
- 
-    #----------------------------------------------------------------------
+
     def __init__(self, basedir):
         self.user = dict()
 
-        wx.Frame.__init__(self, None, title='SETL@Work', size=(250, 250), style=wx.SYSTEM_MENU|wx.CAPTION|wx.CLOSE_BOX|wx.CLIP_CHILDREN|wx.STAY_ON_TOP)
-        self.panel = wx.Panel(self)
+        wx.Frame.__init__(self, None, title='SETL@Work', size=(250, 250), style=wx.SYSTEM_MENU|wx.CAPTION|wx.CLOSE_BOX|wx.CLIP_CHILDREN)
+        self.panel = wx.Panel(self)   
         #self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         self.basedir = basedir
+        self.manager_url = "http://127.0.0.1:8000/manager" # "https://www.setlatwork.com/manager"
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.icon = wx.Icon("icon.ico", wx.BITMAP_TYPE_ICO)
@@ -40,6 +42,7 @@ class MainFrame(wx.Frame):
         sizer.Add(self.password, 0, wx.LEFT|wx.RIGHT|wx.TOP, 5)
 
         # FME Location
+        ## make sure fme_command is not selected
         def get_fme_loc(e):
             if sys.platform == "darwin":
                 openFileDialog = wx.FileDialog(self, "Find FME file", "/Library/FME", "fme", "", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
@@ -82,10 +85,10 @@ class MainFrame(wx.Frame):
         self.Show()
 
     def login(self, e):
+        # upload logs
+        for content in glob.glob(os.path.join(self.basedir, 'logs/') + "*.log"):
+            print(content)
         # validate login details
-        import requests
-        import json
-
         try:
             if os.path.isfile(os.path.join(os.path.abspath('.'), 'cacert.pem')):
                 cert_path = os.path.join(os.path.abspath('.'), 'cacert.pem')
@@ -94,7 +97,7 @@ class MainFrame(wx.Frame):
             else:
                 cert_path = False
 
-            r = requests.get("https://www.setlatwork.com/manager/default/user/jwt", params=dict(username=self.email.GetValue(), password=self.password.GetValue()), verify=cert_path)
+            r = requests.get("%s/default/user/jwt" % self.manager_url, params=dict(username=self.email.GetValue(), password=self.password.GetValue()), verify=cert_path)
             log.info('GET:User - Status Code: %s' % r.status_code)
         except requests.ConnectionError as e:
             log.error(e, exc_info=True)
