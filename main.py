@@ -121,7 +121,8 @@ class MainFrame(wx.Frame):
 
         user = dict(token={"Authorization":"Bearer %s" % json.loads(r.text)['token']}, 
                     fme=self.fme_location.GetPath(),
-                    manager=self.manager_url)
+                    manager=self.manager_url,
+                    cert_path=cert_path)
 
         self.tbIcon = taskbaricon.CustomTaskBarIcon(self, self.basedir, user)
         self.Hide()

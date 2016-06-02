@@ -56,7 +56,7 @@ class Job():
 
         log.debug(params)
 
-        response = requests.put('%s/api/job' % self.user['manager'] , params=params, headers=self.token)
+        response = requests.put('%s/api/job' % self.user['manager'] , params=params, headers=self.token, verify=self.user['cert_path'])
         log.info("PUT:Job - Status Code - %s: " % response.status_code)
         
         # if the update returns a bad response then kill the job
@@ -103,7 +103,7 @@ class Job():
         if os.path.exists(log_file):
 
             # upload file to setl ondemand
-            r = requests.post("%s/api/log" % self.user['manager'], params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.token)
+            r = requests.post("%s/api/log" % self.user['manager'], params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.token, verify=self.user['cert_path'])
             log.info('POST:Log - Status Code: %s' % r)
 
         else:
@@ -153,7 +153,7 @@ class Job():
 
             # download the workspace
             with open(os.path.join(self.workspace_dir, workspace['name']), 'wb') as handle:
-                r = requests.get('{0}/default/download/db/{1}'.format(self.user['manager'], workspace['file']), stream=True, headers=self.token)
+                r = requests.get('{0}/default/download/db/{1}'.format(self.user['manager'], workspace['file']), stream=True, headers=self.token, verify=self.user['cert_path'])
                 log.info('GET:File - Status Code: %s' % r)
                 if not r.ok:
                     status='Could not retrieve %s' % workspace['name']
