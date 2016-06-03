@@ -59,7 +59,7 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
     def on_exit(self, event):
         wx.CallAfter(self.Destroy)
         self.server.stop()
-        r = requests.post("%s/api/client_log" % self.user['manager'], params=dict(worker=socket.gethostname()), files={'file': open(os.path.join(self.basedir, 'logs/client.log'))}, headers=self.user['token'])
+        r = requests.post("https://%s/api/client_log" % self.user['manager'], params=dict(worker=socket.gethostname()), files={'file': open(os.path.join(self.basedir, 'logs/client.log'))}, headers=self.user['bearer'])
         log.info('POST:Client_Log - Status Code: %s' % r)
         exit(1)
 

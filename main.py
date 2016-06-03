@@ -8,6 +8,7 @@ import getpass
 import requests
 import json
 import socket
+import datetime
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class MainFrame(wx.Frame):
         self.panel = wx.Panel(self)   
 
         self.basedir = basedir
-        self.manager_url = "https://www.setlatwork.com/manager"
+        self.manager_url = "www.setlatwork.com/manager"
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.icon = wx.Icon("icon.ico", wx.BITMAP_TYPE_ICO)
@@ -90,7 +91,7 @@ class MainFrame(wx.Frame):
             else:
                 cert_path = False
 
-            r = requests.get("%s/default/user/jwt" % self.manager_url, params=dict(username=self.email.GetValue(), password=self.password.GetValue()), verify=cert_path)
+            r = requests.get("https://%s/default/user/jwt" % self.manager_url, params=dict(username=self.email.GetValue(), password=self.password.GetValue()), verify=cert_path)
             log.info('GET:User - Status Code: %s' % r.status_code)
         except requests.ConnectionError as e:
             log.error(e, exc_info=True)
@@ -119,7 +120,9 @@ class MainFrame(wx.Frame):
         config.set(getpass.getuser(), 'fme location', self.fme_location.GetPath())
         config.write(open(os.path.join(self.basedir, 'setup'), 'w'))
 
-        user = dict(token={"Authorization":"Bearer %s" % json.loads(r.text)['token']}, 
+        user = dict(token=json.loads(r.text)['token'],
+                    bearer={"Authorization":"Bearer %s" % json.loads(r.text)['token']},
+                    token_created=datetime.datetime.now(),
                     fme=self.fme_location.GetPath(),
                     manager=self.manager_url,
                     cert_path=cert_path)

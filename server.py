@@ -8,6 +8,7 @@ import requests
 import socket
 import wx
 import os
+import datetime
 
 log = logging.getLogger(__name__)
 
@@ -58,12 +59,24 @@ class Server_Thread(threading.Thread):
         self.running = False
         self._stop.set()
 
+    def refresh_token(self):
+        r = requests.get("https://%s/default/user/jwt" % self.user['manager'], params={'token':self.user['token']}, headers=self.user['bearer'], verify=self.user['cert_path'])
+        log.info('GET:User - Status Code: %s' % r.status_code)
+        self.user['token'] = json.loads(r.text)['token']
+        self.user['bearer'] = {"Authorization":"Bearer %s" % json.loads(r.text)['token']}
+        self.user['token_created'] = datetime.datetime.now()
+        
+        print 'Token updated'
+
     def run(self):
         check_delay = 10
         while self.running:
             try:
-                r = requests.get("%s/api/job.json" % self.user['manager'], params={'computer':socket.gethostname()}, headers=self.user['token'], verify=self.user['cert_path'])
+                r = requests.get("https://%s/api/job.json" % self.user['manager'], params={'computer':socket.gethostname()}, headers=self.user['bearer'], verify=self.user['cert_path'])
                 log.info('GET:Job - Status Code: %s' % r.status_code)
+                print (datetime.datetime.now() - self.user['token_created']).seconds
+                if (datetime.datetime.now() - self.user['token_created']).seconds > 300:
+                    self.refresh_token()
             except requests.ConnectionError as e:
                 log.error(e)
                 wx.MessageBox('Unable to connect to the server at this time', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
@@ -77,6 +90,10 @@ class Server_Thread(threading.Thread):
                 check_delay = 10
             elif r.status_code == 503:
                 check_delay = 30
+            elif r.status_code == 400:
+                wx.MessageBox('Login timeout, please login again.', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
+                exit(1)
+
 
             time.sleep(check_delay)
         else:
@@ -110,5 +127,5 @@ class Server_Thread(threading.Thread):
         try:
             self.jobs[id].terminate()
         except KeyError:
-            log.error('Error: Job could not be terminated - Not Found')
+            log.error('Error: Job not found - could not be terminated')
 
