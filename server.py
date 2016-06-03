@@ -60,13 +60,23 @@ class Server_Thread(threading.Thread):
         self._stop.set()
 
     def refresh_token(self):
-        r = requests.get("https://%s/default/user/jwt" % self.user['manager'], params={'token':self.user['token']}, headers=self.user['bearer'], verify=self.user['cert_path'])
-        log.info('GET:User - Status Code: %s' % r.status_code)
-        self.user['token'] = json.loads(r.text)['token']
-        self.user['bearer'] = {"Authorization":"Bearer %s" % json.loads(r.text)['token']}
-        self.user['token_created'] = datetime.datetime.now()
         
-        print 'Token updated'
+        try:
+            r = requests.get("https://%s/default/user/jwt" % self.user['manager'], params={'token':self.user['token']}, headers=self.user['bearer'], verify=self.user['cert_path'])
+            log.info('GET:User - Status Code: %s' % r.status_code)
+
+            self.user['token'] = json.loads(r.text)['token']
+            self.user['bearer'] = {"Authorization":"Bearer %s" % json.loads(r.text)['token']}
+            self.user['token_created'] = datetime.datetime.now()
+        except (ValueError, requests.ConnectionError):
+            r = requests.get("https://%s/default/user/jwt" % self.user['manager'], params={'username':self.user['email'], 'password':self.user['password']}, verify=self.user['cert_path'])
+            log.info('GET:User - Status Code: %s' % r.status_code)
+            
+            self.user['token'] = json.loads(r.text)['token']
+            self.user['bearer'] = {"Authorization":"Bearer %s" % json.loads(r.text)['token']}
+            self.user['token_created'] = datetime.datetime.now()
+        
+        log.debug('Token updated: after %s' % (datetime.datetime.now() - self.user['token_created']).seconds)
 
     def run(self):
         check_delay = 10
@@ -74,13 +84,15 @@ class Server_Thread(threading.Thread):
             try:
                 r = requests.get("https://%s/api/job.json" % self.user['manager'], params={'computer':socket.gethostname()}, headers=self.user['bearer'], verify=self.user['cert_path'])
                 log.info('GET:Job - Status Code: %s' % r.status_code)
-                print (datetime.datetime.now() - self.user['token_created']).seconds
+                #print (datetime.datetime.now() - self.user['token_created']).seconds
                 if (datetime.datetime.now() - self.user['token_created']).seconds > 300:
                     self.refresh_token()
             except requests.ConnectionError as e:
                 log.error(e)
-                wx.MessageBox('Unable to connect to the server at this time', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
-                exit(1)
+                print 'Attempt reconnect'
+                self.refresh_token()
+                #wx.MessageBox('Unable to connect to the server at this time', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
+                #exit(1)
 
             if r.status_code == 200:
                 self.create_new_job(r.json()['new_job'])
@@ -91,8 +103,10 @@ class Server_Thread(threading.Thread):
             elif r.status_code == 503:
                 check_delay = 30
             elif r.status_code == 400:
-                wx.MessageBox('Login timeout, please login again.', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
-                exit(1)
+                print '400 - Attempt reconnect'
+                #self.refresh_token()
+                #wx.MessageBox('Login timeout, please login again.', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
+                #exit(1)
 
 
             time.sleep(check_delay)

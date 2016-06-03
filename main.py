@@ -122,6 +122,8 @@ class MainFrame(wx.Frame):
 
         user = dict(token=json.loads(r.text)['token'],
                     bearer={"Authorization":"Bearer %s" % json.loads(r.text)['token']},
+                    email=self.email.GetValue(), 
+                    password=self.password.GetValue(),
                     token_created=datetime.datetime.now(),
                     fme=self.fme_location.GetPath(),
                     manager=self.manager_url,
