@@ -22,7 +22,7 @@ class MainFrame(wx.Frame):
         self.panel = wx.Panel(self)   
 
         self.basedir = basedir
-        self.manager_url = "www.setlatwork.com/manager"
+        self.manager_url = "https://www.setlatwork.com/manager" # "http://127.0.0.1:8000/manager" #
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.icon = wx.Icon("icon.ico", wx.BITMAP_TYPE_ICO)
@@ -91,7 +91,7 @@ class MainFrame(wx.Frame):
             else:
                 cert_path = False
 
-            r = requests.get("https://%s/default/user/jwt" % self.manager_url, params=dict(username=self.email.GetValue(), password=self.password.GetValue()), verify=cert_path)
+            r = requests.get("%s/default/user/jwt" % self.manager_url, params=dict(username=self.email.GetValue(), password=self.password.GetValue()), verify=cert_path)
             log.info('GET:User - Status Code: %s' % r.status_code)
         except requests.ConnectionError as e:
             log.error(e, exc_info=True)

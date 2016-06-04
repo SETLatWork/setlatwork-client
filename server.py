@@ -62,14 +62,14 @@ class Server_Thread(threading.Thread):
     def refresh_token(self):
         
         try:
-            r = requests.get("https://%s/default/user/jwt" % self.user['manager'], params={'token':self.user['token']}, headers=self.user['bearer'], verify=self.user['cert_path'])
+            r = requests.get("%s/default/user/jwt" % self.user['manager'], params={'token':self.user['token']}, headers=self.user['bearer'], verify=self.user['cert_path'])
             log.info('GET:User - Status Code: %s' % r.status_code)
 
             self.user['token'] = json.loads(r.text)['token']
             self.user['bearer'] = {"Authorization":"Bearer %s" % json.loads(r.text)['token']}
             self.user['token_created'] = datetime.datetime.now()
         except (ValueError, requests.ConnectionError):
-            r = requests.get("https://%s/default/user/jwt" % self.user['manager'], params={'username':self.user['email'], 'password':self.user['password']}, verify=self.user['cert_path'])
+            r = requests.get("%s/default/user/jwt" % self.user['manager'], params={'username':self.user['email'], 'password':self.user['password']}, verify=self.user['cert_path'])
             log.info('GET:User - Status Code: %s' % r.status_code)
 
             try:
@@ -87,7 +87,7 @@ class Server_Thread(threading.Thread):
         check_delay = 10
         while self.running:
             try:
-                r = requests.get("https://%s/api/job.json" % self.user['manager'], params={'computer':socket.gethostname()}, headers=self.user['bearer'], verify=self.user['cert_path'])
+                r = requests.get("%s/api/job.json" % self.user['manager'], params={'computer':socket.gethostname()}, headers=self.user['bearer'], verify=self.user['cert_path'])
                 log.info('GET:Job - Status Code: %s' % r.status_code)
                 #print (datetime.datetime.now() - self.user['token_created']).seconds
                 if (datetime.datetime.now() - self.user['token_created']).seconds > 300:
@@ -100,13 +100,15 @@ class Server_Thread(threading.Thread):
                 #exit(1)
 
             if r.status_code == 200:
-                self.create_new_job(r.json()['new_job'])
-                self.check_jobs(r.json()['current_jobs'])
+                if r.json()['new_job']:
+                    self.create_new_job(r.json()['new_job'])
+                if r.json()['current_jobs']:
+                    self.check_jobs(r.json()['current_jobs'])
                 check_delay = 5
             elif r.status_code == 204:
                 check_delay = 10
             elif r.status_code == 503:
-                check_delay = 30
+                check_delay = 10
             elif r.status_code == 400:
                 print '400 - Attempt reconnect'
                 #self.refresh_token()
