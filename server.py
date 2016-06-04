@@ -71,10 +71,15 @@ class Server_Thread(threading.Thread):
         except (ValueError, requests.ConnectionError):
             r = requests.get("https://%s/default/user/jwt" % self.user['manager'], params={'username':self.user['email'], 'password':self.user['password']}, verify=self.user['cert_path'])
             log.info('GET:User - Status Code: %s' % r.status_code)
-            
-            self.user['token'] = json.loads(r.text)['token']
-            self.user['bearer'] = {"Authorization":"Bearer %s" % json.loads(r.text)['token']}
-            self.user['token_created'] = datetime.datetime.now()
+
+            try:
+                self.user['token'] = json.loads(r.text)['token']
+                self.user['bearer'] = {"Authorization":"Bearer %s" % json.loads(r.text)['token']}
+                self.user['token_created'] = datetime.datetime.now()
+            except ValueError:
+                # change the system tray icon to red
+                log.error('Unable to connect to the server')
+
         
         log.debug('Token updated: after %s' % (datetime.datetime.now() - self.user['token_created']).seconds)
 
@@ -89,7 +94,7 @@ class Server_Thread(threading.Thread):
                     self.refresh_token()
             except requests.ConnectionError as e:
                 log.error(e)
-                print 'Attempt reconnect'
+                log.info('Attempt reconnect')
                 self.refresh_token()
                 #wx.MessageBox('Unable to connect to the server at this time', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
                 #exit(1)
