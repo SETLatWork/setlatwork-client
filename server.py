@@ -74,6 +74,7 @@ class Server_Thread(threading.Thread):
                 log.info('GET:User - Status Code: %s' % r.status_code)
             except requests.ConnectionError as e:
                 log.error(e)
+                return
 
             try:
                 self.user['token'] = json.loads(r.text)['token']
