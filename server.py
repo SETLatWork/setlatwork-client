@@ -69,8 +69,11 @@ class Server_Thread(threading.Thread):
             self.user['bearer'] = {"Authorization":"Bearer %s" % json.loads(r.text)['token']}
             self.user['token_created'] = datetime.datetime.now()
         except (ValueError, requests.ConnectionError):
-            r = requests.get("%s/default/user/jwt" % self.user['manager'], params={'username':self.user['email'], 'password':self.user['password']}, verify=self.user['cert_path'])
-            log.info('GET:User - Status Code: %s' % r.status_code)
+            try:
+                r = requests.get("%s/default/user/jwt" % self.user['manager'], params={'username':self.user['email'], 'password':self.user['password']}, verify=self.user['cert_path'])
+                log.info('GET:User - Status Code: %s' % r.status_code)
+            except requests.ConnectionError as e:
+                log.error(e)
 
             try:
                 self.user['token'] = json.loads(r.text)['token']

@@ -75,8 +75,11 @@ class Job():
         run_arg = [self.fme_location, workspace_path] + parameters
         log.info('Running {}'.format(run_arg))
 
-        self.execute = subprocess.Popen(run_arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        log.info('Run PID: {}'.format(self.execute.pid))
+        try:
+            self.execute = subprocess.Popen(run_arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            log.info('Run PID: {}'.format(self.execute.pid))
+        except OSError:
+            return '%s not a valid executable' % self.fme_location
 
         while True:
             line = self.execute.stdout.readline()
