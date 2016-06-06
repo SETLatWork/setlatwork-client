@@ -56,7 +56,7 @@ class Job():
 
         log.debug(params)
 
-        response = requests.put('%s/api/job' % self.user['manager'] , params=params, headers=self.user['bearer'])
+        response = requests.put('%s/api/job' % self.user['manager'] , params=params, headers=self.user['bearer'], verify=self.user['cert_path'])
         log.info("PUT:Job - Status Code - %s: " % response.status_code)
         
         # if the update returns a bad response then kill the job
