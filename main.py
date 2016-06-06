@@ -91,6 +91,11 @@ class MainFrame(wx.Frame):
             else:
                 cert_path = False
 
+            if cert_path:
+                log.info("Cert path has been set")
+            else:
+                log.info("Cert path has not been set")
+
             r = requests.get("%s/default/user/jwt" % self.manager_url, params=dict(username=self.email.GetValue(), password=self.password.GetValue()), verify=cert_path)
             log.info('GET:User - Status Code: %s' % r.status_code)
         except requests.ConnectionError as e:
