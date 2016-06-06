@@ -101,7 +101,7 @@ class MainFrame(wx.Frame):
         except requests.ConnectionError as e:
             log.error(e, exc_info=True)
             wx.MessageBox('Unable to connect to the server at this time', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
-            exit(1)
+            sys.exit(1)
             return
 
         if r.status_code != 200:
