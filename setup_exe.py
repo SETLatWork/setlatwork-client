@@ -6,7 +6,7 @@ from glob import glob
 import sys, shutil, os, zipfile
 import datetime
 
-basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 # Copy required C++ bindings over
 sys.path.append(r'C:\Windows\winsxs\x86_microsoft.vc90.crt_1fc8b3b9a1e18e3b_9.0.30729.4148_none_5090ab56bcba71c2')
