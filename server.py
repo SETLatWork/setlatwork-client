@@ -101,7 +101,7 @@ class Server_Thread(threading.Thread):
                 log.info('Attempt reconnect')
                 self.refresh_token()
                 #wx.MessageBox('Unable to connect to the server at this time', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
-                #exit(1)
+                #sys.exit(1)
 
             if r.status_code == 200:
                 if r.json()['new_job']:
@@ -117,7 +117,7 @@ class Server_Thread(threading.Thread):
                 print '400 - Attempt reconnect'
                 #self.refresh_token()
                 #wx.MessageBox('Login timeout, please login again.', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
-                #exit(1)
+                #sys.exit(1)
 
 
             time.sleep(check_delay)

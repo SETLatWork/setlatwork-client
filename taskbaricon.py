@@ -62,7 +62,7 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
         self.server.stop()
         r = requests.post("%s/api/client_log" % self.user['manager'], params=dict(worker=socket.gethostname()), files={'file': open(os.path.join(self.basedir, 'logs/client.log'))}, headers=self.user['bearer'], verify=self.user['cert_path'])
         log.info('POST:Client_Log - Status Code: %s' % r)
-        sys.exit(1)
+        sys.exit(0)
 
     def OnTaskBarActivate(self, evt):
         if self.frame.IsIconized():
