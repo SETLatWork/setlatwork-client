@@ -89,6 +89,8 @@ class Job():
             sys.stdout.flush()
             if 'FME floating license system failure: cannot connect to license server(-15)' in line:
                 return "Could not obtain an FME license"
+            elif 'We hope you enjoyed using FME.' in line:
+                return "FME license has expired."
 
         log.debug(workspace)
         #features = []
