@@ -81,16 +81,19 @@ class Job():
         except OSError:
             return '%s not a valid executable' % self.fme_location
 
+        last_line = None
         while True:
             line = self.execute.stdout.readline()
             if not line:
                 break
             log.debug(line)
+            if 'Translation FAILED' not in line:
+                last_line = line
             sys.stdout.flush()
             if 'FME floating license system failure: cannot connect to license server(-15)' in line:
                 return "Could not obtain an FME license"
-            elif 'We hope you enjoyed using FME.' in line:
-                return "FME license has expired."
+            # elif 'We hope you enjoyed using FME.' in line:
+            #     return "FME license has expired."
 
         log.debug(workspace)
         #features = []
@@ -111,10 +114,12 @@ class Job():
             r = requests.post("%s/api/log" % self.user['manager'], params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.user['bearer'], verify=self.user['cert_path'])
             log.info('POST:Log - Status Code: %s' % r)
 
+        elif last_line:
+            log.error(last_line)
+            return last_line
         else:
             log.error('Could not locate workspace log file')
             return "Could not locate workspace log file."
-
 
         ##################################
         ## Return Result
