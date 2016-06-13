@@ -19,7 +19,7 @@ else:
 if not os.path.exists(os.path.join(basedir, 'logs')):
     os.mkdir(os.path.join(basedir, 'logs'))
 
-logging.basicConfig(format=format, level=logging.NOTSET, filemode='w', filename=r'{0}/logs/client.log'.format(basedir, datetime.datetime.now().strftime("%Y%m%d")), datefmt=datefmt)
+logging.basicConfig(format=format, level=logging.INFO, filemode='w', filename=r'{0}/logs/client.log'.format(basedir, datetime.datetime.now().strftime("%Y%m%d")), datefmt=datefmt)
 os.chdir(basedir)
 sys.path = [basedir] + [p for p in sys.path if not p == basedir]
 

@@ -91,7 +91,7 @@ class Server_Thread(threading.Thread):
         check_delay = 10
         while self.running:
             try:
-                r = requests.get("%s/v1/job.json" % self.user['manager'], params={'computer':socket.gethostname()}, headers=self.user['bearer'], verify=self.user['cert_path'])
+                r = requests.get("%s/api/job.json" % self.user['manager'], params={'computer':socket.gethostname()}, headers=self.user['bearer'], verify=self.user['cert_path'])
                 log.info('GET:Job - Status Code: %s' % r.status_code)
                 #print (datetime.datetime.now() - self.user['token_created']).seconds
                 if (datetime.datetime.now() - self.user['token_created']).seconds > 300:

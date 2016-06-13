@@ -56,7 +56,7 @@ class Job():
 
         log.debug(params)
 
-        response = requests.put('%s/v1/job' % self.user['manager'] , params=params, headers=self.user['bearer'], verify=self.user['cert_path'])
+        response = requests.put('%s/api/job' % self.user['manager'] , params=params, headers=self.user['bearer'], verify=self.user['cert_path'])
         log.info("PUT:Job - Status Code - %s: " % response.status_code)
         
         # if the update returns a bad response then kill the job
@@ -111,7 +111,7 @@ class Job():
         if os.path.exists(log_file):
 
             # upload file to setl ondemand
-            r = requests.post("%s/v1/log" % self.user['manager'], params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.user['bearer'], verify=self.user['cert_path'])
+            r = requests.post("%s/api/log" % self.user['manager'], params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.user['bearer'], verify=self.user['cert_path'])
             log.info('POST:Log - Status Code: %s' % r)
 
         elif last_line:
