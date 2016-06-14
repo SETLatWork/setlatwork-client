@@ -13,12 +13,12 @@ import threading
 log = logging.getLogger(__name__)
  
 
-TBMENU_RESTORE = wx.NewId()
-TBMENU_RUNNING = wx.NewId()
-TBMENU_CLOSE   = wx.NewId()
-TBMENU_MANAGER = wx.NewId()
-
 class CustomTaskBarIcon(wx.TaskBarIcon):
+    """"""
+    TBMENU_RESTORE = wx.NewId()
+    TBMENU_RUNNING = wx.NewId()
+    TBMENU_CLOSE   = wx.NewId()
+    TBMENU_MANAGER = wx.NewId()
 
     def __init__(self, frame, basedir, user):
         """Constructor"""
@@ -33,9 +33,12 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
 
         # bind some events
         self.Bind(wx.EVT_TASKBAR_LEFT_DCLICK, self.OnTaskBarActivate)
-        self.Bind(wx.EVT_MENU, self.OnTaskBarChange, id=TBMENU_RESTORE)
-        self.Bind(wx.EVT_MENU, self.OnTaskBarManager, id=TBMENU_MANAGER)
-        self.Bind(wx.EVT_MENU, self.OnTaskBarClose, id=TBMENU_CLOSE)
+        self.Bind(wx.EVT_MENU, self.OnTaskBarChange, id=self.TBMENU_RESTORE)
+        self.Bind(wx.EVT_MENU, self.OnTaskBarManager, id=self.TBMENU_MANAGER)
+        self.Bind(wx.EVT_MENU, self.OnTaskBarClose, id=self.TBMENU_CLOSE)
+
+        # http://www.blog.pythonlibrary.org/2010/05/22/wxpython-and-threads/
+        # Publisher.subscribe(self.UpdateMenu, "jobs_running")
 
         self.server = server.Server_Thread(basedir, user)
         self.server.daemon = True
@@ -51,18 +54,24 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
         else:
             self.server.stop()
 
-
     def OnTaskBarActivate(self, evt):
         """"""
         pass
 
-
     def OnTaskBarManager(self, evt):
         import webbrowser
-        webbrowser.open_new_tab('https://manager.setlatwork.com')
+        webbrowser.open_new_tab(self.user['manager'])
 
-    
     def OnTaskBarClose(self, evt):
+        """
+        Destroy the taskbar icon and frame from the taskbar icon itself
+        """
+        self.frame.Close()
+
+    # def UpdateMenu(self, message):
+    #     self.jobs = message.data # self.menu.SetLabel(self.TBMENU_RUNNING, 'Running: %s' % message)
+
+    def on_exit(self, event):
         wx.CallAfter(self.Destroy)
         self.server.stop()
         try:
@@ -70,9 +79,7 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
             log.info('POST:Client_Log - Status Code: %s' % r)
         except requests.ConnectionError:
             pass
-        self.frame.Close()
         sys.exit(0)
-
 
     def OnTaskBarActivate(self, evt):
         if self.frame.IsIconized():
@@ -81,14 +88,13 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
             self.frame.Show(True)
         self.frame.Raise()
 
-
     def CreatePopupMenu(self):
         menu = wx.Menu()
         offset = 2 if self.server.running else 1
-        menu.Append(TBMENU_RESTORE, "Deactivate" if self.server.running else "Activate")
-        menu.Append(TBMENU_RUNNING, "Running: %s" % str(threading.activeCount() - offset))
-        menu.Append(TBMENU_MANAGER, "Manager")
+        menu.Append(self.TBMENU_RESTORE, "Deactivate" if self.server.running else "Activate")
+        menu.Append(self.TBMENU_RUNNING, "Running: %s" % str(threading.activeCount() - offset))
+        menu.Append(self.TBMENU_MANAGER, "Manager")
         menu.AppendSeparator()
-        menu.Append(TBMENU_CLOSE, "E&xit")
-        
+        menu.Append(self.TBMENU_CLOSE, "E&xit")
+        wx.EVT_MENU(self, self.TBMENU_CLOSE, self.on_exit)
         return menu
