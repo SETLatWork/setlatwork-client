@@ -10,24 +10,27 @@ import wx
 import os
 import datetime
 
+# from wx.lib.pubsub import setuparg1
+# from wx.lib.pubsub import pub as Publisher
+
 log = logging.getLogger(__name__)
 
 class Job_Thread(threading.Thread):
 
-    def __init__(self, data, basedir, user):
+    def __init__(self, data, basedir, user, jobs):
         threading.Thread.__init__(self)
         self.data = data
         self.basedir = basedir
         self.new_job = None
         self.user = user
+        self.jobs = jobs
 
     def run(self):
         log.info("#--------------------------------------------------------------------")
         log.info('+- Starting Job {}'.format(self.data['name']))
         log.info("#--------------------------------------------------------------------")
         try:
-            self.new_job = job.Job(self.data, self.basedir, self.user)
-            self.new_job.run()
+            self.new_job = job.Job(self.data, self.basedir, self.user, self.jobs)
         except Exception as e:
             log.error(e, exc_info=True)
         log.info("#--------------------------------------------------------------------")
@@ -47,20 +50,22 @@ class Server_Thread(threading.Thread):
 
     def __init__ (self, basedir, user):
         threading.Thread.__init__(self)
+
+        self.basedir = basedir
+        self.user = user
+
         self._stop = threading.Event()
         self.running = True
         
-        self.basedir = basedir
-
         self.jobs = dict()
-        self.user = user
+        
 
     def stop(self):
         self.running = False
         self._stop.set()
 
+
     def refresh_token(self):
-        
         try:
             r = requests.get("%s/default/user/jwt" % self.user['manager'], params={'token':self.user['token']}, headers=self.user['bearer'], verify=self.user['cert_path'])
             log.info('GET:User - Status Code: %s' % r.status_code)
@@ -84,7 +89,6 @@ class Server_Thread(threading.Thread):
                 # change the system tray icon to red
                 log.error('Unable to connect to the server')
 
-        
         log.debug('Token updated: after %s' % (datetime.datetime.now() - self.user['token_created']).seconds)
 
     def run(self):
@@ -100,8 +104,6 @@ class Server_Thread(threading.Thread):
                 log.error(e)
                 log.info('Attempt reconnect')
                 self.refresh_token()
-                #wx.MessageBox('Unable to connect to the server at this time', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
-                #sys.exit(1)
 
             if r.status_code == 200:
                 if r.json()['new_job']:
@@ -115,11 +117,8 @@ class Server_Thread(threading.Thread):
                 check_delay = 10
             elif r.status_code == 400:
                 print '400 - Attempt reconnect'
-                #self.refresh_token()
-                #wx.MessageBox('Login timeout, please login again.', 'Server Connection Error', wx.OK | wx.ICON_ERROR)
-                #sys.exit(1)
 
-
+            # wx.CallAfter(Publisher.sendMessage, "jobs_running", len(self.jobs))
             time.sleep(check_delay)
         else:
             log.info('connection ended')
@@ -137,7 +136,7 @@ class Server_Thread(threading.Thread):
                 for k, v in data.iteritems():
                     log.info('%s : %s' %(k, v))
 
-                job = Job_Thread(data, self.basedir, self.user)
+                job = Job_Thread(data, self.basedir, self.user, self.jobs)
                 self.jobs[data['id']] = job
                 job.daemon = True
                 job.start()

@@ -82,6 +82,10 @@ class MainFrame(wx.Frame):
         self.Show()
 
     def login(self, e):
+        # disable the button
+        btn = e.GetEventObject()
+        btn.Disable()
+        
         # validate login details
         try:
             if os.path.isfile(os.path.join(os.path.abspath('.'), 'cacert.pem')):

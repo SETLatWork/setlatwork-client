@@ -20,8 +20,9 @@ setup(
         windows=[{'script':'setlatwork.py',
                     'icon_resources': [(1, 'icon.ico')]
                     }],
-        description="SETL@Work",
-        author="J P Burke",
+        description="SETL@Work Client",
+        version="0.0.1",
+        author="SETL@Work Limited",
         license="GPL v3",
         data_files=data_files,
         zipfile = None,

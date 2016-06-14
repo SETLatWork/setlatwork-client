@@ -15,10 +15,11 @@ log = logging.getLogger(__package__)
 
 class Job():
 
-    def __init__(self, data, basedir, user):
+    def __init__(self, data, basedir, user, jobs):
         self.basedir = basedir
         self.data = data
         self.user = user
+        self.jobs = jobs
 
         self.terminate = False
         self.execute = None
@@ -33,6 +34,8 @@ class Job():
         self.fme_location = self.user['fme']
 
         log.info(self.fme_location)
+
+        self.run()
 
 
     def kill(self):
@@ -87,8 +90,8 @@ class Job():
             if not line:
                 break
             log.debug(line)
-            if 'Translation FAILED' not in line:
-                last_line = line
+            #if 'Translation FAILED' not in line and line:
+            last_line = line
             sys.stdout.flush()
             if 'FME floating license system failure: cannot connect to license server(-15)' in line:
                 return "Could not obtain an FME license"
@@ -190,8 +193,9 @@ class Job():
             log.debug('failed')
             log.error('{0} {1}'.format(workspace_name, status))
             self.status(status='Failed', error='Failed - {}'.format(status))
-            return
         else:
             log.debug('completed')
             self.status(status='Completed')
-            return
+        
+        del self.jobs[self.data['id']]
+        return

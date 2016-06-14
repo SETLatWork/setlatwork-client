@@ -7,8 +7,8 @@ import requests.certs
 
 setup(app=['setlatwork.py'],
       version="0.0.1",
-      description="SETL@Work",
-      author="J P Burke",
+      description="SETL@Work Client",
+      author="SETL@Work Limited",
       license="GPL v3",
       data_files=[
         'LICENSE',
