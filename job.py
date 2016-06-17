@@ -10,6 +10,7 @@ import socket
 import requests
 from requests.auth import HTTPBasicAuth
 import subprocess
+import gzip
 
 log = logging.getLogger(__package__)
 
@@ -112,9 +113,15 @@ class Job():
         log.debug('Log File Exists: %s' % os.path.exists(log_file))
 
         if os.path.exists(log_file):
+            try:
+                with open(log_file, 'rb') as orig_file:
+                    with gzip.open(log_file + '.gz', 'wb') as zipped_file:
+                        zipped_file.writelines(orig_file)
+            except Exception as e:
+                log.error(e)
 
-            # upload file to setl ondemand
-            r = requests.post("%s/api/log" % self.user['manager'], params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file)}, headers=self.user['bearer'], verify=self.user['cert_path'])
+            # upload file to setl@work
+            r = requests.post("%s/api/log" % self.user['manager'], params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file + '.gz')}, headers=self.user['bearer'], verify=self.user['cert_path'])
             log.info('POST:Log - Status Code: %s' % r)
 
         elif last_line:

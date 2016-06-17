@@ -22,7 +22,7 @@ class MainFrame(wx.Frame):
         self.panel = wx.Panel(self)   
 
         self.basedir = basedir
-        self.manager_url = "https://api.setlatwork.com" # "http://127.0.0.1:8000/manager" #
+        self.manager_url = "http://127.0.0.1:8000/manager" # "https://api.setlatwork.com" # 
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.icon = wx.Icon("icon.ico", wx.BITMAP_TYPE_ICO)

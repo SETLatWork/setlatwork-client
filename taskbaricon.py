@@ -6,6 +6,7 @@ import server
 import requests
 import socket
 import threading
+import gzip
 
 # from wx.lib.pubsub import setuparg1
 # from wx.lib.pubsub import pub as Publisher
@@ -62,7 +63,14 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
         wx.CallAfter(self.Destroy)
         self.server.stop()
         try:
-            r = requests.post("%s/api/client_log" % self.user['manager'], params=dict(worker=socket.gethostname()), files={'file': open(os.path.join(self.basedir, 'logs/client.log'))}, headers=self.user['bearer'], verify=self.user['cert_path'])
+            with open(os.path.join(self.basedir, 'logs/client.log'), 'rb') as orig_file:
+                with gzip.open(os.path.join(self.basedir, 'logs/client.log.gz'), 'wb') as zipped_file:
+                    zipped_file.writelines(orig_file)
+        except Exception as e:
+            log.error(e)
+        
+        try:
+            r = requests.post("%s/api/client_log" % self.user['manager'], params=dict(worker=socket.gethostname()), files={'file': open(os.path.join(self.basedir, 'logs/client.log.gz'))}, headers=self.user['bearer'], verify=self.user['cert_path'])
             log.info('POST:Client_Log - Status Code: %s' % r)
         except requests.ConnectionError:
             pass
