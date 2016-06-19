@@ -21,7 +21,6 @@ class Job_Thread(threading.Thread):
 
         self.data = data
         self.basedir = basedir
-        self.new_job = None
         self.user = user
         self.jobs = jobs
 
@@ -86,6 +85,9 @@ class Job_Thread(threading.Thread):
             # elif 'We hope you enjoyed using FME.' in line:
             #     return "FME license has expired."
 
+        # if self.terminate:
+        #     return
+
         log.debug(workspace)
         #features = []
         log_file = ''
@@ -124,10 +126,7 @@ class Job_Thread(threading.Thread):
         ## Return Result
         self.status(workspace=workspace['id'])
 
-        if self.terminate == True:
-            return "Job was Terminated"
-        else:
-            return
+        return
         
 
     def run(self):
@@ -208,7 +207,6 @@ class Job_Thread(threading.Thread):
 
     def stop(self):
         log.info('Stopping thread for job')
-        log.info(self.new_job)
         
         try:
             log.info('Delete PID: %s' % self.execute.pid)

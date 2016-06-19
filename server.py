@@ -65,7 +65,7 @@ class Server_Thread(threading.Thread):
         check_delay = 10
         while self.running:
             try:
-                r = requests.get("%s/api/job.json" % self.user['manager'], params={'computer':socket.gethostname()}, headers=self.user['bearer'], verify=self.user['cert_path'])
+                r = requests.get("%s/api/job.json" % self.user['manager'], params={'computer':socket.gethostname(), 'jobs':self.jobs.keys()}, headers=self.user['bearer'], verify=self.user['cert_path'])
                 log.info('GET:Job - Status Code: %s' % r.status_code)
                 
                 if (datetime.datetime.now() - self.user['token_created']).seconds > 300:
@@ -78,12 +78,13 @@ class Server_Thread(threading.Thread):
 
             if r.status_code == 200:
                 new_job_id = None
+                log.debug(r.json())
                 if r.json()['new_job']:
                     new_job = r.json()['new_job']
                     new_job_id = new_job['id']
                     self.create_new_job(new_job)
-                if r.json()['current_jobs']:
-                    self.check_jobs(new_job_id, r.json()['current_jobs'])
+                #if r.json()['current_jobs']:
+                self.check_jobs(new_job_id, r.json()['current_jobs'])
                 check_delay = 5
             elif r.status_code == 204:
                 check_delay = 10
