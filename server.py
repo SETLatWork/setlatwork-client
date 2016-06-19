@@ -116,7 +116,7 @@ class Server_Thread(threading.Thread):
                 log.error(new_job)
                 new_job = None
 
-    def check_jobs(self, new_job_id, current_jobs):
+    def check_jobs(self, new_job_id, current_jobs, client_version):
         current_jobs = current_jobs = [new_job_id] # [v['id'] for v in current_jobs] + [new_job_id]
         log.debug(current_jobs)
         for k, v in self.jobs.iteritems():

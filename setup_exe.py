@@ -6,6 +6,12 @@ from glob import glob
 import sys
 import os
 import requests.certs
+import datetime
+
+VERSION = "0.0.1"
+
+with open('VERSION', 'w') as f:
+  f.write('%s+%s' % (VERSION, datetime.datetime.now()))
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 

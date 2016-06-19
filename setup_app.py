@@ -1,17 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
+import os
 from setuptools import setup
 import requests.certs
+import datetime
+
+VERSION = "0.0.1"
+
+with open('VERSION', 'w') as f:
+  f.write('%s+%s' % (VERSION, datetime.datetime.now()))
 
 setup(app=['setlatwork.py'],
-      version="0.0.1",
+      version=VERSION,
       description="SETL@Work Client",
       author="SETL@Work Limited",
       license="GPL v3",
       data_files=[
         'LICENSE',
+        'VERSION',
         'icon.ico',
         requests.certs.where()],
       options={'py2app': {
@@ -24,4 +31,6 @@ setup(app=['setlatwork.py'],
                 'optimize': 0
                }},
       setup_requires=['py2app'])
+
+
 
