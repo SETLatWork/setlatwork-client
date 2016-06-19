@@ -189,9 +189,9 @@ class Job_Thread(threading.Thread):
         shutil.rmtree(self.workspace_dir)
 
         if self.terminate:
+            log.debug('terminated')
             self.status(status='Terminated', error='User terminated Job')
-
-        if status:
+        elif status:
             log.debug('failed')
             log.error('{0} {1}'.format(workspace_name, status))
             self.status(status='Failed', error='Failed - {}'.format(status))
@@ -214,7 +214,7 @@ class Job_Thread(threading.Thread):
             log.info('Delete PID: %s' % self.execute.pid)
             self.execute.terminate()
         except:
-            log.error('Failed to terminate workspace - supply will terminate on completion')
+            log.error('Failed to terminate workspace - will terminate on completion')
 
         self.terminate = True
 
