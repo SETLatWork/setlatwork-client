@@ -26,6 +26,7 @@ class Server_Thread(threading.Thread):
 
         self._stop = threading.Event()
         self.running = True
+        self.update_notify = False
         
         self.jobs = dict()
         
@@ -84,6 +85,17 @@ class Server_Thread(threading.Thread):
                     new_job_id = new_job['id']
                     self.create_new_job(new_job)
                 #if r.json()['current_jobs']:
+                if os.path.exists('VERSION'):
+                    with open('VERSION', 'r') as f:
+                        current_version = f.read().split('+')[0]
+                        client_version = r.json()['client_version']
+                        log.debug(current_version)
+                        log.debug(client_version)
+                        log.debug(current_version < client_version)
+                        if current_version < client_version and not self.update_notify:
+                            self.update_notify = True
+                            wx.MessageBox('%s is now available.' % client_version, 'SETL@Work Update Available', wx.OK | wx.ICON_WARNING)
+
                 self.check_jobs(new_job_id, r.json()['current_jobs'])
                 check_delay = 5
             elif r.status_code == 204:
@@ -116,7 +128,7 @@ class Server_Thread(threading.Thread):
                 log.error(new_job)
                 new_job = None
 
-    def check_jobs(self, new_job_id, current_jobs, client_version):
+    def check_jobs(self, new_job_id, current_jobs):
         current_jobs = current_jobs = [new_job_id] # [v['id'] for v in current_jobs] + [new_job_id]
         log.debug(current_jobs)
         for k, v in self.jobs.iteritems():
