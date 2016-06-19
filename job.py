@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-#
 import os
 import sys
-import string
-import shutil
+#import string
+#import shutil
 import json
-from collections import OrderedDict
+#from collections import OrderedDict
 import logging
 import socket
 import requests
@@ -123,6 +123,8 @@ class Job():
             # upload file to setl@work
             r = requests.post("%s/api/log" % self.user['manager'], params=dict(workspace=workspace['id'], job=self.data['id']), files={'file': open(log_file + '.gz')}, headers=self.user['bearer'], verify=self.user['cert_path'])
             log.info('POST:Log - Status Code: %s' % r)
+
+            os.unlink(log_file + '.gz')
 
         elif last_line:
             log.error(last_line)

@@ -74,6 +74,7 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
             log.info('POST:Client_Log - Status Code: %s' % r)
         except requests.ConnectionError:
             pass
+        os.unlink(os.path.join(self.basedir, 'logs/client.log.gz'))
         sys.exit(0)
 
     def OnTaskBarActivate(self, evt):
