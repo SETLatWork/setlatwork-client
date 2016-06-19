@@ -2,7 +2,7 @@
 import os
 import sys
 #import string
-#import shutil
+import shutil
 import json
 #from collections import OrderedDict
 import logging

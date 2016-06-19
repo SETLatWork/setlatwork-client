@@ -38,7 +38,8 @@ class Job_Thread(threading.Thread):
         log.info("#--------------------------------------------------------------------")
 
     def terminate(self):
-        log.info( 'Terminating: {}'.formatself.new_job)
+        log.info('Terminating: {}'.format(self.new_job))
+        log.info(self.jobs)
         self.new_job.kill()
 
 
@@ -97,19 +98,23 @@ class Server_Thread(threading.Thread):
             try:
                 r = requests.get("%s/api/job.json" % self.user['manager'], params={'computer':socket.gethostname()}, headers=self.user['bearer'], verify=self.user['cert_path'])
                 log.info('GET:Job - Status Code: %s' % r.status_code)
-                #print (datetime.datetime.now() - self.user['token_created']).seconds
+                
                 if (datetime.datetime.now() - self.user['token_created']).seconds > 300:
                     self.refresh_token()
+
             except requests.ConnectionError as e:
                 log.error(e)
                 log.info('Attempt reconnect')
                 self.refresh_token()
 
             if r.status_code == 200:
+                new_job_id = None
                 if r.json()['new_job']:
-                    self.create_new_job(r.json()['new_job'])
+                    new_job = r.json()['new_job']
+                    new_job_id = new_job['id']
+                    self.create_new_job(new_job)
                 if r.json()['current_jobs']:
-                    self.check_jobs(r.json()['current_jobs'])
+                    self.check_jobs(new_job_id, r.json()['current_jobs'])
                 check_delay = 5
             elif r.status_code == 204:
                 check_delay = 10
@@ -118,38 +123,43 @@ class Server_Thread(threading.Thread):
             elif r.status_code == 400:
                 print '400 - Attempt reconnect'
 
-            # wx.CallAfter(Publisher.sendMessage, "jobs_running", len(self.jobs))
             time.sleep(check_delay)
         else:
             log.info('connection ended')
 
-    def check_jobs(self, current_jobs):
-        for job in current_jobs:
-            if job['id'] not in self.jobs:
-                self.terminate(job['id'])
 
-    def create_new_job(self, data):
-        if not data:
+    def create_new_job(self, new_job):
+        if not new_job:
             log.info("Client has exited!")
         else:
             try:
-                for k, v in data.iteritems():
+                for k, v in new_job.iteritems():
                     log.info('%s : %s' %(k, v))
 
-                job = Job_Thread(data, self.basedir, self.user, self.jobs)
-                self.jobs[data['id']] = job
+                job = Job_Thread(new_job, self.basedir, self.user, self.jobs)
                 job.daemon = True
                 job.start()
+
+                self.jobs[new_job['id']] = job
             except Exception as e:
                 log.error(e, exc_info=True)
-                log.error(data)
-                data = None
+                log.error(new_job)
+                new_job = None
+
+    def check_jobs(self, new_job_id, current_jobs):
+        current_jobs = [v['id'] for v in current_jobs] + [new_job_id]
+        log.debug(current_jobs)
+        for k, v in self.jobs.iteritems():
+            log.debug(k)
+            if k not in current_jobs:
+                log.info('Terminating Job {}'.format(k))
+                v.terminate()
 
 
-    def terminate(self, id):
-        log.info('Terminating Job {}'.format(id))
-        try:
-            self.jobs[id].terminate()
-        except KeyError:
-            log.error('Error: Job not found - could not be terminated')
+    # def terminate(self, job_id):
+    #     log.info('Terminating Job {}'.format(job_id))
+    #     try:
+    #         self.jobs[job_id].terminate()
+    #     except KeyError:
+    #         log.error('Error: Job not found - could not be terminated')
 
