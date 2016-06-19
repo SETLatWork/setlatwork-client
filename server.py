@@ -10,38 +10,7 @@ import wx
 import os
 import datetime
 
-# from wx.lib.pubsub import setuparg1
-# from wx.lib.pubsub import pub as Publisher
-
 log = logging.getLogger(__name__)
-
-class Job_Thread(threading.Thread):
-
-    def __init__(self, data, basedir, user, jobs):
-        threading.Thread.__init__(self)
-        self.data = data
-        self.basedir = basedir
-        self.new_job = None
-        self.user = user
-        self.jobs = jobs
-
-    def run(self):
-        log.info("#--------------------------------------------------------------------")
-        log.info('+- Starting Job {}'.format(self.data['name']))
-        log.info("#--------------------------------------------------------------------")
-        try:
-            self.new_job = job.Job(self.data, self.basedir, self.user, self.jobs)
-        except Exception as e:
-            log.error(e, exc_info=True)
-        log.info("#--------------------------------------------------------------------")
-        log.info('+- Closing Job {}'.format(self.data['name']))
-        log.info("#--------------------------------------------------------------------")
-
-    def terminate(self):
-        log.info('Terminating: {}'.format(self.new_job))
-        log.info(self.jobs)
-        self.new_job.kill()
-
 
 
 class Server_Thread(threading.Thread):
@@ -136,11 +105,11 @@ class Server_Thread(threading.Thread):
                 for k, v in new_job.iteritems():
                     log.info('%s : %s' %(k, v))
 
-                job = Job_Thread(new_job, self.basedir, self.user, self.jobs)
-                job.daemon = True
-                job.start()
+                job_thread = job.Job_Thread(new_job, self.basedir, self.user, self.jobs)
+                job_thread.daemon = True
+                job_thread.start()
 
-                self.jobs[new_job['id']] = job
+                self.jobs[new_job['id']] = job_thread
             except Exception as e:
                 log.error(e, exc_info=True)
                 log.error(new_job)
@@ -153,13 +122,7 @@ class Server_Thread(threading.Thread):
             log.debug(k)
             if k not in current_jobs:
                 log.info('Terminating Job {}'.format(k))
-                v.terminate()
-
-
-    # def terminate(self, job_id):
-    #     log.info('Terminating Job {}'.format(job_id))
-    #     try:
-    #         self.jobs[job_id].terminate()
-    #     except KeyError:
-    #         log.error('Error: Job not found - could not be terminated')
+                #v.terminate()
+                v.stop()
+                log.info(v.stopped())
 

@@ -1,53 +1,40 @@
 # -*- coding: utf-8 -*-#
 import os
 import sys
-#import string
 import shutil
 import json
-#from collections import OrderedDict
 import logging
 import socket
 import requests
 from requests.auth import HTTPBasicAuth
 import subprocess
 import gzip
+import threading
 
 log = logging.getLogger(__package__)
 
-class Job():
+class Job_Thread(threading.Thread):
 
     def __init__(self, data, basedir, user, jobs):
-        self.basedir = basedir
+        threading.Thread.__init__(self)
+        self._stop = threading.Event()
+
         self.data = data
+        self.basedir = basedir
+        self.new_job = None
         self.user = user
         self.jobs = jobs
 
-        self.terminate = False
         self.execute = None
+        self.terminate = False
 
         self.workspace_dir = self.basedir + '/temp/' + str(self.data['id']) + '_' + self.data['name'][0:-4] + '/'
         os.makedirs(self.workspace_dir)
-
-        log.debug(basedir)
         log.info(self.workspace_dir)
 
         self.token = self.user['bearer']
         self.fme_location = self.user['fme']
-
         log.info(self.fme_location)
-
-        self.run()
-
-
-    def kill(self):
-        try:
-            log.info('Delete PID: %s' % self.execute.pid)
-            self.execute.terminate()
-        except:
-            log.error('Failed to terminate workspace - supply will terminate on completion')
-
-        self.terminate = True
-        self.error = 'Terminated'
 
 
     def status(self, status='Running', workspace=None, error=None):
@@ -141,10 +128,13 @@ class Job():
             return "Job was Terminated"
         else:
             return
-
-
+        
 
     def run(self):
+        log.info("#--------------------------------------------------------------------")
+        log.info('+- Starting Job {}'.format(self.data['name']))
+        log.info("#--------------------------------------------------------------------")
+
         status = ''
         workspace_name = ''
 
@@ -198,6 +188,9 @@ class Job():
         ## Delete workspace and log on completion
         shutil.rmtree(self.workspace_dir)
 
+        if self.terminate:
+            self.status(status='Terminated', error='User terminated Job')
+
         if status:
             log.debug('failed')
             log.error('{0} {1}'.format(workspace_name, status))
@@ -207,4 +200,25 @@ class Job():
             self.status(status='Completed')
         
         del self.jobs[self.data['id']]
+        log.info("#--------------------------------------------------------------------")
+        log.info('+- Closing Job {}'.format(self.data['name']))
+        log.info("#--------------------------------------------------------------------")
         return
+
+
+    def stop(self):
+        log.info('Stopping thread for job')
+        log.info(self.new_job)
+        
+        try:
+            log.info('Delete PID: %s' % self.execute.pid)
+            self.execute.terminate()
+        except:
+            log.error('Failed to terminate workspace - supply will terminate on completion')
+
+        self.terminate = True
+
+        self._stop.set()
+
+    def stopped(self):
+        return self._stop.isSet()
