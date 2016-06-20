@@ -57,7 +57,7 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
 
     def OnTaskBarManager(self, evt):
         import webbrowser
-        webbrowser.open_new_tab(self.user['manager'])
+        webbrowser.open_new_tab("https://manager.setlatwork.com")
 
     def OnTaskBarClose(self, evt):
         wx.CallAfter(self.Destroy)
