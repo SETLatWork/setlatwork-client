@@ -60,9 +60,6 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
         webbrowser.open_new_tab(self.user['manager'])
 
     def OnTaskBarClose(self, evt):
-        self.frame.Close()
-
-    def on_exit(self, evt):
         wx.CallAfter(self.Destroy)
         self.server.stop()
         try:
@@ -78,7 +75,7 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
         except requests.ConnectionError:
             pass
         os.unlink(os.path.join(self.basedir, 'logs/client.log.gz'))
-        sys.exit(0)
+        self.frame.Close()
 
     def OnTaskBarActivate(self, evt):
         if self.frame.IsIconized():
@@ -95,6 +92,5 @@ class CustomTaskBarIcon(wx.TaskBarIcon):
         menu.Append(TBMENU_MANAGER, "Manager")
         menu.AppendSeparator()
         menu.Append(TBMENU_CLOSE, "E&xit")
-        wx.EVT_MENU(self, TBMENU_CLOSE, self.on_exit)
         
         return menu
