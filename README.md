@@ -1,10 +1,10 @@
 # Readme
 
-The SETL@Work client is a wrapper for FME Desktop. It receives jobs from https://www.setlatwork.com - passes them onto FME Desktop to run and passes the results back to the manager website.
+The SETL@Work client is a wrapper for FME Desktop. It receives jobs from https://www.setlatwork.com and passes them onto FME Desktop to run and sends the results back to the manager website.
 
-This code is released as open source for the viewing pleasure of SETL@Work users, in an effort to provide trust that the client running on their work machine contains no malicious components.
+This code is released as open source for the viewing pleasure of SETL@Work users, in an effort to provide confidence to users in running the client application.
 
-You may view the code, but have no rights to make changes to it or redistribute it. This is the intellectual property of SETL@Work Limited.
+You may view the code and execute it, but have no rights to make changes to it or redistribute it. By downloading this code you accept our terms and conditions found here: https://www.setlatwork.com/page/4/terms%20and%20conditions
 
 # Run
 
