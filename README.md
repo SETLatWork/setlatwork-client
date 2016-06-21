@@ -1,6 +1,6 @@
 # SETL@Work client
 
-The SETL@Work client is a wrapper for FME Desktop. It receives jobs from https://manager.setlatwork.com - passes them onto FME Desktop to run and passes the results back to the manager website.
+The SETL@Work client is a wrapper for FME Desktop. It receives jobs from https://www.setlatwork.com - passes them onto FME Desktop to run and passes the results back to the manager website.
 
 
 
